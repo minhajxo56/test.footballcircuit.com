@@ -46,6 +46,7 @@ Route::middleware(['auth'])->group(function () {
             Route::get('/letters/compose', [LetterController::class, 'create'])->name('letters.compose');
             Route::post('/letters/{letter}/acknowledge', [LetterController::class, 'acknowledge'])->name('letters.acknowledge');
             Route::resource('letters', LetterController::class);
+            Route::patch('/letters/{letter}/cancel', [LetterController::class, 'cancel'])->name('letters.cancel');
         });
 
         // =========================================================
