@@ -11,6 +11,7 @@ use App\Http\Controllers\HolidayController;
 use App\Http\Controllers\SystemSettingsController;
 use App\Http\Controllers\TourController;
 use App\Http\Controllers\LetterController;
+use App\Http\Controllers\DepartmentController;
 
 use App\Http\Middleware\EnsurePasswordIsChanged;
 use App\Http\Controllers\Auth\ForcePasswordChangeController;
