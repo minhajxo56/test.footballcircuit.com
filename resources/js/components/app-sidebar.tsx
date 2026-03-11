@@ -9,7 +9,8 @@ import {
     Plane, 
     FileText, 
     Settings, 
-    Mail 
+    Mail,
+    Building2 // <-- Added icon for Departments
 } from 'lucide-react';
 import AppLogo from '@/components/app-logo';
 import { NavFooter } from '@/components/nav-footer';
@@ -28,13 +29,13 @@ import {
 } from '@/components/ui/sidebar';
 import { dashboard } from '@/routes'; 
 
-// Role hierarchy constants
+// Role hierarchy constants (Added super_admin to align with backend policies)
 const ROLES = {
-    ALL: ['admin', 'ceo', 'hr', 'team_in_charge', 'employee', 'intern'],
-    EMPLOYEE_UP: ['admin', 'ceo', 'hr', 'team_in_charge', 'employee'],
-    MANAGER_UP: ['admin', 'ceo', 'hr', 'team_in_charge'],
-    HR_UP: ['admin', 'ceo', 'hr'],
-    ADMIN_ONLY: ['admin']
+    ALL: ['super_admin', 'admin', 'ceo', 'hr', 'team_in_charge', 'employee', 'intern'],
+    EMPLOYEE_UP: ['super_admin', 'admin', 'ceo', 'hr', 'team_in_charge', 'employee'],
+    MANAGER_UP: ['super_admin', 'admin', 'ceo', 'hr', 'team_in_charge'],
+    HR_UP: ['super_admin', 'admin', 'ceo', 'hr'],
+    ADMIN_ONLY: ['super_admin', 'admin']
 };
 
 export function AppSidebar() {
@@ -61,13 +62,13 @@ export function AppSidebar() {
                     { title: 'Team Inbox', href: '/applications', icon: BookOpen, allowed: ROLES.MANAGER_UP },
                     { title: 'Master Roster', href: '/schedules', icon: Calendar, allowed: ROLES.MANAGER_UP },
                     { title: 'Tours & Travel', href: '/tours', icon: Plane, allowed: ROLES.HR_UP },
-                    { title: 'Holidays', href: '/holidays', icon: Calendar, allowed: ROLES.HR_UP },
                 ]
             },
             {
                 title: 'Administration',
                 items: [
                     { title: 'Employees Directory', href: '/users', icon: Users, allowed: ROLES.HR_UP },
+                    { title: 'Departments', href: '/departments', icon: Building2, allowed: ROLES.HR_UP }, // <-- Added Departments route
                     { title: 'Official Letters', href: '/letters', icon: Mail, allowed: ROLES.EMPLOYEE_UP },
                     { title: 'Activity Logs', href: '/activity-logs', icon: FolderGit2, allowed: ROLES.ADMIN_ONLY },
                 ]
@@ -99,9 +100,7 @@ export function AppSidebar() {
             </SidebarHeader>
 
             <SidebarContent>
-                {/* CRITICAL FIX: Make sure you are mapping over `filteredNavGroups` here. 
-                  If you previously had a raw array here, that's why everything was showing! 
-                */}
+                {/* Strictly mapping over filteredNavGroups to enforce role permissions */}
                 {filteredNavGroups.map((group) => (
                     <SidebarGroup key={group.title}>
                         <SidebarGroupLabel className="text-xs font-bold uppercase tracking-wider text-gray-500">
@@ -112,7 +111,7 @@ export function AppSidebar() {
                                 {group.items.map((item) => {
                                     const Icon = item.icon;
                                     return (
-                                         <SidebarMenuItem key={item.title}>
+                                        <SidebarMenuItem key={item.title}>
                                             <SidebarMenuButton asChild>
                                                 <Link href={item.href}>
                                                     <Icon />

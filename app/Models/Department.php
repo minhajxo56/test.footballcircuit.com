@@ -13,8 +13,11 @@ class Department extends Model {
     public function employees(): HasMany {
         return $this->hasMany(Employee::class);
     }
-    public function manager(): BelongsTo {
-        return $this->belongsTo(Employee::class, 'manager_id');
+    // Add this relationship
+    public function managers()
+    {
+        return $this->belongsToMany(User::class, 'department_manager')
+                    ->withTimestamps();
     }
     public function schedules(): HasMany {
         return $this->hasMany(Schedule::class);

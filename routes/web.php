@@ -76,6 +76,12 @@ Route::middleware(['auth'])->group(function () {
             Route::get('/activity-logs', [ActivityLogController::class, 'index'])->name('activity-logs.index');
         });
 
+        Route::resource('departments', DepartmentController::class)->except(['show']);
+    
+    // Assign managers to a department
+    Route::get('departments/{department}/assign-managers', [DepartmentController::class, 'assignManagers'])->name('departments.assign-managers');
+    Route::post('departments/{department}/managers', [DepartmentController::class, 'syncManagers'])->name('departments.sync-managers');
+
     });
 });
 

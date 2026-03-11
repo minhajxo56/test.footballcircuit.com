@@ -47,4 +47,11 @@ class User extends Authenticatable
     {
         return $this->belongsTo(Role::class);
     }
+
+    // Add this relationship
+    public function managedDepartments()
+    {
+        return $this->belongsToMany(Department::class, 'department_manager')
+                    ->withTimestamps();
+    }
 }
