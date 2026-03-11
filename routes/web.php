@@ -25,43 +25,58 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/force-password-change', [ForcePasswordChangeController::class, 'create'])->name('password.force-change');
     Route::post('/force-password-change', [ForcePasswordChangeController::class, 'store'])->name('password.force-update');
 
-    // ALL OTHER ROUTES locked behind EnsurePasswordIsChanged
+    // All routes locked behind EnsurePasswordIsChanged
     Route::middleware([EnsurePasswordIsChanged::class])->group(function () {
+        
+        // =========================================================
+        // 1. ALL USERS (Including Interns)
+        // =========================================================
         Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
-        
-        // Employee Self-Service
-        
-        // HR / Admin Modules
-        Route::get('/activity-logs', [ActivityLogController::class, 'index'])->name('activity-logs.index');
-        Route::resource('users', UserController::class);
-        Route::resource('holidays', HolidayController::class);
-        Route::get('/settings', [SystemSettingsController::class, 'index'])->name('settings.index');
-        
-        // Operational / Manager Modules
-        // Employee Self-Service
-        // Note: I mapped this to myApplications to avoid conflicting with the resource 'show' method
-        Route::get('/my-applications', [UserApplicationController::class, 'myApplications'])->name('my-applications'); 
-
-        // Operational / Manager Modules
-        // Standard resource handles index, create, store, show, edit, update, destroy
-        Route::resource('applications', UserApplicationController::class);
-        
-        Route::post('/applications/{application}/escalate', [UserApplicationController::class, 'escalate'])->name('applications.escalate');
-        Route::post('/applications/{application}/resolve', [UserApplicationController::class, 'resolve'])->name('applications.resolve');
         Route::get('/my-schedule', [ScheduleController::class, 'mySchedule'])->name('schedule.my-schedule');
-        
-        // Explicitly define the publish route BEFORE the resource route
-        Route::post('/schedules/publish', [ScheduleController::class, 'store'])->name('schedules.publish');
-        
-        // Schedules standard resource
-        Route::resource('schedules', ScheduleController::class);
-        
-        Route::resource('tours', TourController::class);
-        Route::get('/letters/compose', [LetterController::class, 'create'])->name('letters.compose');
-        Route::resource('letters', LetterController::class);
-        Route::post('/letters/{id}/acknowledge', [LetterController::class, 'acknowledge'])->name('letters.acknowledge');
+
+        // =========================================================
+        // 2. EMPLOYEES & ABOVE (Interns blocked)
+        // =========================================================
+        Route::middleware('role:employee,team_in_charge,hr,ceo,admin')->group(function () {
+            Route::get('/my-applications', [UserApplicationController::class, 'myApplications'])->name('my-applications');
+            
+            // Standard resources (Policies handle which methods they can actually use)
+            Route::resource('applications', UserApplicationController::class);
+            
+            Route::get('/letters/compose', [LetterController::class, 'create'])->name('letters.compose');
+            Route::post('/letters/{letter}/acknowledge', [LetterController::class, 'acknowledge'])->name('letters.acknowledge');
+            Route::resource('letters', LetterController::class);
+        });
+
+        // =========================================================
+        // 3. MANAGEMENT (Team In-Charge & Above)
+        // =========================================================
+        Route::middleware('role:team_in_charge,hr,ceo,admin')->group(function () {
+            Route::post('/applications/{application}/escalate', [UserApplicationController::class, 'escalate'])->name('applications.escalate');
+            Route::post('/applications/{application}/resolve', [UserApplicationController::class, 'resolve'])->name('applications.resolve');
+            
+            Route::post('/schedules/publish', [ScheduleController::class, 'store'])->name('schedules.publish');
+            Route::resource('schedules', ScheduleController::class);
+        });
+
+        // =========================================================
+        // 4. UPPER MANAGEMENT (HR, CEO, Admin)
+        // =========================================================
+        Route::middleware('role:hr,ceo,admin')->group(function () {
+            Route::resource('users', UserController::class);
+            Route::resource('holidays', HolidayController::class);
+            Route::resource('tours', TourController::class);
+        });
+
+        // =========================================================
+        // 5. ADMIN ONLY
+        // =========================================================
+        Route::middleware('role:admin')->group(function () {
+            Route::get('/activity-logs', [ActivityLogController::class, 'index'])->name('activity-logs.index');
+            Route::get('/settings', [SystemSettingsController::class, 'index'])->name('settings.index');
+        });
+
     });
 });
 
 require __DIR__.'/settings.php';
-

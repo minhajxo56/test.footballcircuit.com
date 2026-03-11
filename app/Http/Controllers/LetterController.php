@@ -13,68 +13,35 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 
-class LetterController extends Controller 
+class LetterController extends Controller
 {
-    public function index(Request $request) 
-    { 
+    public function index(Request $request)
+    {
+        $this->authorize('viewAny', Letter::class);
         $user = $request->user();
 
-        $letters = Letter::with(['issuer', 'recipients'])
+        $query = Letter::with(['issuer', 'recipients'])
             ->where('issued_by', $user->id)
-            ->orWhereHas('recipients', function($q) use ($user) {
-                $q->where('user_id', $user->id);
-            })
-            ->latest()
-            ->get();
+            ->orWhereHas('recipients', fn($q) => $q->where('user_id', $user->id));
 
-        return Inertia::render('Letters/Index', [
-            'letters' => $letters
-        ]); 
+        if ($user->role->name === 'Team_In_Charge') {
+            $query->orWhereHas('issuer.employee', fn($q) => $q->where('department_id', $user->employee->department_id))
+                  ->orWhereHas('recipients.employee', fn($q) => $q->where('department_id', $user->employee->department_id));
+        }
+
+        return Inertia::render('Letters/Index', ['letters' => $query->latest()->get()]);
     }
 
-    public function create() 
-    { 
-        $employees = User::with('employee.department')
-            ->whereIn('status', ['active', 'probation'])
-            ->get()
-            ->map(function ($user) {
-                return [
-                    'id' => $user->id,
-                    'name' => $user->name,
-                    'dept' => optional(optional($user->employee)->department)->name ?? 'Staff',
-                ];
-            });
-
-        $departments = Department::where('is_active', true)
-            ->get()
-            ->map(function ($dept) {
-                return [
-                    'id' => 'dept_' . $dept->id,
-                    'name' => 'All ' . $dept->name . ' Department',
-                ];
-            });
-
-        $tours = Tour::where('end_date', '>=', now()->toDateString())
-            ->get()
-            ->map(function ($tour) {
-                $start = Carbon::parse($tour->start_date)->format('M j');
-                $end = Carbon::parse($tour->end_date)->format('M j');
-                
-                return [
-                    'id' => $tour->id,
-                    'name' => $tour->name . ' (' . $start . ' - ' . $end . ')',
-                ];
-            });
-
-        return Inertia::render('Letters/Compose', [
-            'employees' => $employees,
-            'departments' => $departments,
-            'tours' => $tours,
-        ]); 
+    public function create()
+    {
+        $this->authorize('create', Letter::class);
+        return Inertia::render('Letters/Compose', $this->getFormData());
     }
 
-    public function store(Request $request) 
-    { 
+    public function store(Request $request)
+    {
+        $this->authorize('create', Letter::class);
+
         $validated = $request->validate([
             'type' => 'required|string',
             'subject' => 'required|string|max:255',
@@ -86,103 +53,32 @@ class LetterController extends Controller
         ]);
 
         $letter = DB::transaction(function () use ($validated, $request) {
-            $letter = Letter::create([
-                'issued_by' => $request->user()->id,
-                'type' => $validated['type'],
-                'subject' => $validated['subject'],
-                'content' => $validated['content'],
-                'validity_type' => $validated['validity_type'],
-                'validity_value' => $validated['validity_value'],
-            ]);
+            $letter = Letter::create(array_merge(
+                $request->only(['type', 'subject', 'content', 'validity_type', 'validity_value']),
+                ['issued_by' => Auth::id()]
+            ));
 
-            $userIds = collect($validated['recipients'])
-                ->filter(fn($item) => is_numeric($item))
-                ->map(fn($item) => (int) $item)
-                ->toArray();
+            $userIds = $this->resolveRecipients($validated['recipients']);
+            if (!empty($userIds)) $letter->recipients()->syncWithoutDetaching($userIds);
 
-            $departments = collect($validated['recipients'])
-                ->filter(fn($item) => !is_numeric($item))
-                ->map(fn($item) => str_replace('dept_', '', $item))
-                ->toArray();
-
-            if (!empty($departments)) {
-                $deptUserIds = User::whereHas('employee', function($query) use ($departments) {
-                    $query->whereIn('department_id', $departments);
-                })
-                ->whereIn('status', ['active', 'probation'])
-                ->pluck('id')
-                ->toArray();
-                
-                $userIds = array_unique(array_merge($userIds, $deptUserIds));
-            }
-
-            if (!empty($userIds)) {
-                $letter->recipients()->syncWithoutDetaching($userIds);
-            }
-
-            ActivityLog::create([
-                'user_id' => Auth::id() ?? $request->user()->id,
-                'action' => $validated['action_type'] === 'draft' ? 'letter_draft_created' : 'letter_created_and_sent',
-                'model_type' => Letter::class,
-                'model_id' => $letter->id,
-                'old_data' => null,
-                'new_data' => $letter->load('recipients')->toArray(),
-                'ip_address' => $request->ip(),
-            ]);
+            $this->logActivity($validated['action_type'] === 'draft' ? 'letter_draft_created' : 'letter_created_and_sent', $letter, $request->ip());
 
             return $letter;
         });
 
-        return redirect()->route('letters.edit', $letter->id); 
+        return redirect()->route('letters.edit', $letter->id);
     }
 
-    public function edit($id)
+    public function edit(Letter $letter)
     {
-        $letter = Letter::with('recipients')->findOrFail($id);
-
-        $employees = User::with('employee.department')
-            ->whereIn('status', ['active', 'probation'])
-            ->get()
-            ->map(function ($user) {
-                return [
-                    'id' => $user->id,
-                    'name' => $user->name,
-                    'dept' => optional(optional($user->employee)->department)->name ?? 'Staff',
-                ];
-            });
-
-        $departments = Department::where('is_active', true)
-            ->get()
-            ->map(function ($dept) {
-                return [
-                    'id' => 'dept_' . $dept->id,
-                    'name' => 'All ' . $dept->name . ' Department',
-                ];
-            });
-
-        $tours = Tour::where('end_date', '>=', now()->toDateString())
-            ->get()
-            ->map(function ($tour) {
-                $start = Carbon::parse($tour->start_date)->format('M j');
-                $end = Carbon::parse($tour->end_date)->format('M j');
-                
-                return [
-                    'id' => $tour->id,
-                    'name' => $tour->name . ' (' . $start . ' - ' . $end . ')',
-                ];
-            });
-
-        return Inertia::render('Letters/Compose', [
-            'letter' => $letter,
-            'employees' => $employees,
-            'departments' => $departments,
-            'tours' => $tours,
-        ]);
+        $this->authorize('update', $letter);
+        $letter->load('recipients');
+        return Inertia::render('Letters/Compose', array_merge(['letter' => $letter], $this->getFormData()));
     }
 
-    public function update(Request $request, $id)
+    public function update(Request $request, Letter $letter)
     {
-        $letter = Letter::with('recipients')->findOrFail($id);
+        $this->authorize('update', $letter);
 
         $validated = $request->validate([
             'type' => 'required|string',
@@ -197,69 +93,70 @@ class LetterController extends Controller
         DB::transaction(function () use ($validated, $letter, $request) {
             $oldData = $letter->toArray();
 
-            $letter->update([
-                'type' => $validated['type'],
-                'subject' => $validated['subject'],
-                'content' => $validated['content'],
-                'validity_type' => $validated['validity_type'],
-                'validity_value' => $validated['validity_value'],
-            ]);
+            $letter->update($request->only(['type', 'subject', 'content', 'validity_type', 'validity_value']));
+            $letter->recipients()->sync($this->resolveRecipients($validated['recipients']));
 
-            $userIds = collect($validated['recipients'])
-                ->filter(fn($item) => is_numeric($item))
-                ->map(fn($item) => (int) $item)
-                ->toArray();
-
-            $departments = collect($validated['recipients'])
-                ->filter(fn($item) => !is_numeric($item))
-                ->map(fn($item) => str_replace('dept_', '', $item))
-                ->toArray();
-
-            if (!empty($departments)) {
-                $deptUserIds = User::whereHas('employee', function($query) use ($departments) {
-                    $query->whereIn('department_id', $departments);
-                })
-                ->whereIn('status', ['active', 'probation'])
-                ->pluck('id')
-                ->toArray();
-                
-                $userIds = array_unique(array_merge($userIds, $deptUserIds));
-            }
-
-            $letter->recipients()->sync($userIds);
-
-            ActivityLog::create([
-                'user_id' => Auth::id() ?? $request->user()->id,
-                'action' => $validated['action_type'] === 'draft' ? 'letter_draft_updated' : 'letter_updated_and_sent',
-                'model_type' => Letter::class,
-                'model_id' => $letter->id,
-                'old_data' => $oldData,
-                'new_data' => $letter->fresh('recipients')->toArray(),
-                'ip_address' => $request->ip(),
-            ]);
+            $this->logActivity($validated['action_type'] === 'draft' ? 'letter_draft_updated' : 'letter_updated_and_sent', $letter, $request->ip(), $oldData);
         });
 
         return redirect()->back();
     }
 
-    public function show($id) 
-    { 
-        $letter = Letter::with(['issuer', 'recipients'])->findOrFail($id);
-
-        return Inertia::render('Letters/Show', [
-            'letterId' => $id,
-            'letterDetails' => $letter,
-        ]);
+    public function show(Letter $letter)
+    {
+        $this->authorize('view', $letter);
+        $letter->load(['issuer', 'recipients']);
+        return Inertia::render('Letters/Show', ['letterId' => $letter->id, 'letterDetails' => $letter]);
     }
 
-    public function acknowledge(Request $request, $id)
+    public function acknowledge(Request $request, Letter $letter)
     {
-        $letter = Letter::findOrFail($id);
+        $this->authorize('acknowledge', $letter);
+        $letter->recipients()->updateExistingPivot(Auth::id(), ['read_at' => now()]);
+        return back()->with('success', 'Letter acknowledged successfully.');
+    }
 
-        $letter->recipients()->updateExistingPivot($request->user()->id, [
-            'read_at' => now(),
+    private function getFormData()
+    {
+        $employees = User::with('employee.department')->whereIn('status', ['active', 'probation'])->get()->map(fn($u) => [
+            'id' => $u->id, 'name' => $u->name, 'dept' => optional(optional($u->employee)->department)->name ?? 'Staff'
         ]);
 
-        return back()->with('success', 'Letter acknowledged successfully.');
+        $departments = Department::where('is_active', true)->get()->map(fn($d) => [
+            'id' => "dept_{$d->id}", 'name' => "All {$d->name} Department"
+        ]);
+
+        $tours = Tour::where('end_date', '>=', now()->toDateString())->get()->map(fn($t) => [
+            'id' => $t->id, 'name' => "{$t->name} (" . Carbon::parse($t->start_date)->format('M j') . " - " . Carbon::parse($t->end_date)->format('M j') . ")"
+        ]);
+
+        return compact('employees', 'departments', 'tours');
+    }
+
+    private function resolveRecipients(array $recipients)
+    {
+        $userIds = collect($recipients)->filter('is_numeric')->map(fn($i) => (int)$i)->toArray();
+        $departments = collect($recipients)->reject('is_numeric')->map(fn($i) => str_replace('dept_', '', $i))->toArray();
+
+        if (!empty($departments)) {
+            $deptUserIds = User::whereHas('employee', fn($q) => $q->whereIn('department_id', $departments))
+                ->whereIn('status', ['active', 'probation'])->pluck('id')->toArray();
+            $userIds = array_unique(array_merge($userIds, $deptUserIds));
+        }
+
+        return $userIds;
+    }
+
+    private function logActivity(string $action, Letter $letter, string $ip, ?array $oldData = null)
+    {
+        ActivityLog::create([
+            'user_id' => Auth::id(),
+            'action' => $action,
+            'model_type' => Letter::class,
+            'model_id' => $letter->id,
+            'old_data' => $oldData,
+            'new_data' => $letter->fresh('recipients')->toArray(),
+            'ip_address' => $ip,
+        ]);
     }
 }

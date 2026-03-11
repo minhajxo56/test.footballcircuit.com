@@ -10,39 +10,52 @@ use Inertia\Inertia;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Auth;
 
-class UserApplicationController extends Controller 
+class UserApplicationController extends Controller
 {
-    public function index(Request $request) 
-    { 
+    public function index(Request $request)
+    {
+        $this->authorize('viewAny', UserApplication::class);
+
         $user = $request->user();
-        
-        $applications = UserApplication::with(['user.employee', 'escalatedRole'])
-            ->where(function($query) use ($user) {
-                $query->whereNull('escalated_to_role')
-                      ->orWhere('escalated_to_role', $user->role_id);
-            })
-            ->latest()
-            ->get();
+
+        $query = UserApplication::with(['user.employee', 'escalatedRole'])
+            ->where(function($q) use ($user) {
+                $q->whereNull('escalated_to_role')
+                  ->orWhere('escalated_to_role', $user->role_id);
+            });
+
+        if ($user->role->name === 'Team_In_Charge') {
+            $query->whereHas('user.employee', function($q) use ($user) {
+                $q->where('department_id', $user->employee->department_id);
+            });
+        }
 
         return Inertia::render('Applications/Index', [
-            'applications' => $applications
-        ]); 
+            'applications' => $query->latest()->get()
+        ]);
     }
 
-    public function myApplications(Request $request) 
-    { 
-        $applications = UserApplication::with(['approver', 'escalatedRole'])
-            ->where('user_id', $request->user()->id)
-            ->latest()
-            ->get();
-         
+    public function myApplications(Request $request)
+    {
         return Inertia::render('Applications/MyApps', [
-            'applications' => $applications
-        ]); 
+            'applications' => UserApplication::with(['approver', 'escalatedRole'])
+                ->where('user_id', $request->user()->id)
+                ->latest()
+                ->get()
+        ]);
+    }
+
+    public function create()
+    {
+        $this->authorize('create', UserApplication::class);
+        
+        return Inertia::render('Applications/Form');
     }
 
     public function store(Request $request)
     {
+        $this->authorize('create', UserApplication::class);
+
         $validated = $request->validate([
             'type' => 'required|string|max:50',
             'title' => 'required|string|max:255',
@@ -53,13 +66,12 @@ class UserApplicationController extends Controller
             'action_type' => 'required|in:draft,send',
         ]);
 
-        $attachmentPath = null;
-        if ($request->hasFile('attachment')) {
-            $attachmentPath = $request->file('attachment')->store('applications', 'public');
-        }
+        $attachmentPath = $request->hasFile('attachment') 
+            ? $request->file('attachment')->store('applications', 'public') 
+            : null;
 
         $application = UserApplication::create([
-            'user_id' => $request->user()->id,
+            'user_id' => Auth::id(),
             'type' => $validated['type'],
             'title' => $validated['title'],
             'details' => $validated['details'],
@@ -69,36 +81,30 @@ class UserApplicationController extends Controller
             'status' => $validated['action_type'] === 'draft' ? 'draft' : 'pending',
         ]);
 
-        ActivityLog::create([
-            'user_id' => Auth::id() ?? $request->user()->id,
-            'action' => $validated['action_type'] === 'draft' ? 'application_draft_created' : 'application_submitted',
-            'model_type' => UserApplication::class,
-            'model_id' => $application->id,
-            'old_data' => null,
-            'new_data' => $application->toArray(),
-            'ip_address' => $request->ip(),
-        ]);
+        $this->logActivity(
+            $validated['action_type'] === 'draft' ? 'application_draft_created' : 'application_submitted', 
+            $application
+        );
 
         return redirect()->route('applications.edit', $application->id);
     }
 
-    public function create() 
-    { 
-        return Inertia::render('Applications/Form'); 
-    }
-
-    public function edit(Request $request, $id) 
-    { 
-        $application = UserApplication::where('user_id', $request->user()->id)->findOrFail($id);
+    public function edit(Request $request, $id)
+    {
+        $application = UserApplication::where('user_id', Auth::id())->findOrFail($id);
+        
+        $this->authorize('update', $application);
 
         return Inertia::render('Applications/Form', [
             'application' => $application
-        ]); 
+        ]);
     }
 
     public function update(Request $request, $id)
     {
-        $application = UserApplication::where('user_id', $request->user()->id)->findOrFail($id);
+        $application = UserApplication::where('user_id', Auth::id())->findOrFail($id);
+        
+        $this->authorize('update', $application);
 
         $validated = $request->validate([
             'type' => 'required|string|max:50',
@@ -111,8 +117,8 @@ class UserApplicationController extends Controller
         ]);
 
         $oldData = $application->toArray();
-
         $attachmentPath = $application->attachment_path;
+
         if ($request->hasFile('attachment')) {
             if ($attachmentPath) {
                 Storage::disk('public')->delete($attachmentPath);
@@ -134,21 +140,19 @@ class UserApplicationController extends Controller
             'status' => $determinedStatus,
         ]);
 
-        ActivityLog::create([
-            'user_id' => Auth::id() ?? $request->user()->id,
-            'action' => $validated['action_type'] === 'draft' ? 'application_draft_updated' : 'application_submitted',
-            'model_type' => UserApplication::class,
-            'model_id' => $application->id,
-            'old_data' => $oldData,
-            'new_data' => $application->fresh()->toArray(),
-            'ip_address' => $request->ip(),
-        ]);
+        $this->logActivity(
+            $validated['action_type'] === 'draft' ? 'application_draft_updated' : 'application_submitted', 
+            $application, 
+            $oldData
+        );
 
         return redirect()->back();
     }
 
     public function show(UserApplication $application)
     {
+        $this->authorize('view', $application);
+
         $application->load(['user.employee.department', 'approver', 'escalatedRole']);
         
         return Inertia::render('Applications/Show', [
@@ -158,6 +162,8 @@ class UserApplicationController extends Controller
 
     public function resolve(Request $request, UserApplication $application)
     {
+        $this->authorize('resolve', $application);
+
         $validated = $request->validate([
             'action' => 'required|in:approve,reject',
             'reason' => 'nullable|string'
@@ -167,25 +173,19 @@ class UserApplicationController extends Controller
 
         $application->update([
             'status' => $validated['action'] === 'approve' ? 'approved' : 'rejected',
-            'approved_by' => $request->user()->id,
+            'approved_by' => Auth::id(),
             'escalated_to_role' => null, 
         ]);
 
-        ActivityLog::create([
-            'user_id' => Auth::id() ?? $request->user()->id,
-            'action' => 'application_resolved',
-            'model_type' => UserApplication::class,
-            'model_id' => $application->id,
-            'old_data' => $oldData,
-            'new_data' => $application->fresh()->toArray(),
-            'ip_address' => $request->ip(),
-        ]);
+        $this->logActivity('application_resolved', $application, $oldData);
 
         return back()->with('success', 'Application ' . $validated['action'] . 'd successfully.');
     }
 
     public function escalate(Request $request, UserApplication $application)
     {
+        $this->authorize('escalate', $application);
+
         $validated = $request->validate([
             'role_id' => 'required|exists:roles,id',
         ]);
@@ -198,24 +198,14 @@ class UserApplicationController extends Controller
             'escalated_to_role' => $role->id,
         ]);
 
-        ActivityLog::create([
-            'user_id' => Auth::id() ?? $request->user()->id,
-            'action' => 'application_escalated',
-            'model_type' => UserApplication::class,
-            'model_id' => $application->id,
-            'old_data' => $oldData,
-            'new_data' => $application->fresh()->toArray(),
-            'ip_address' => $request->ip(),
-        ]);
+        $this->logActivity('application_escalated', $application, $oldData);
 
         return back()->with('success', "Application escalated to {$role->name} successfully.");
     }
     
-    public function destroy(Request $request, UserApplication $application)
+    public function destroy(UserApplication $application)
     {
-        if ($application->user_id !== $request->user()->id && $request->user()->role->name !== 'Admin') {
-            abort(403, 'Unauthorized action.');
-        }
+        $this->authorize('delete', $application);
 
         if (!in_array($application->status, ['pending', 'draft'])) {
             return back()->with('error', 'You cannot delete an application that has already been processed.');
@@ -228,16 +218,21 @@ class UserApplicationController extends Controller
         $oldData = $application->toArray();
         $application->delete();
 
+        $this->logActivity('application_deleted', $application, $oldData, true);
+
+        return back()->with('success', 'Application cancelled successfully.');
+    }
+
+    private function logActivity(string $action, UserApplication $application, ?array $oldData = null, bool $isDeleted = false)
+    {
         ActivityLog::create([
-            'user_id' => Auth::id() ?? $request->user()->id,
-            'action' => 'application_deleted',
+            'user_id' => Auth::id(),
+            'action' => $action,
             'model_type' => UserApplication::class,
             'model_id' => $application->id,
             'old_data' => $oldData,
-            'new_data' => null,
-            'ip_address' => $request->ip(),
+            'new_data' => $isDeleted ? null : $application->fresh()->toArray(),
+            'ip_address' => request()->ip(),
         ]);
-
-        return back()->with('success', 'Application cancelled successfully.');
     }
 }
