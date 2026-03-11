@@ -101,7 +101,10 @@ export default function Form({ user, roles = [], departments = [] }: Props) {
                     />
                 </div>
 
-                <form ref={formRef} className="flex flex-col gap-6" onSubmit={e => e.preventDefault()}>
+                <form ref={formRef} className="flex flex-col gap-6" onSubmit={e => {
+    e.preventDefault();
+    handleStepClick(currentStep === 1 ? 2 : currentStep);
+}}>
                     {(currentStep === 1 || currentStep === 2) && (
                         <div className="grid grid-cols-1 gap-6 lg:grid-cols-5">
                             <div className="flex flex-col space-y-6 lg:col-span-3">

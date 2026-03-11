@@ -166,9 +166,13 @@ class UserController extends Controller
                 ]
             );
 
+            if ($request->input('action_type') === 'send') {
+                $user->notify(new NewUserCredentials($generatedPassword));
+            }
+
             ActivityLog::create([
-                'user_id' => Auth::id(),
-                'action' => $validated['action_type'] === 'draft' ? 'employee_draft_updated' : 'employee_updated_and_sent',
+                'user_id' => Auth::id(),                
+                'action' => $request->input('action_type') === 'draft' ? 'employee_draft_updated' : 'employee_updated_and_sent',
                 'model_type' => User::class,
                 'model_id' => $user->id,
                 'old_data' => $oldData,
