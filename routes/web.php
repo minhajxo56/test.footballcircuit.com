@@ -73,7 +73,6 @@ Route::middleware(['auth'])->group(function () {
         // =========================================================
         Route::middleware('role:admin')->group(function () {
             Route::get('/activity-logs', [ActivityLogController::class, 'index'])->name('activity-logs.index');
-            Route::get('/settings', [SystemSettingsController::class, 'index'])->name('settings.index');
         });
 
     });

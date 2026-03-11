@@ -1,7 +1,7 @@
 APP_NAME=CF-Workflow
 APP_ENV=production
 APP_KEY=base64:/4vsxnS591/U9vz9fb1VFSpEN69/bijiL1cSGqkVHLc=
-APP_DEBUG=false
+APP_DEBUG=true
 APP_URL=https://test.footballcircuit.com
 ASSET_URL=/public
 

@@ -1,7 +1,10 @@
 import { Head, Link, usePage, router } from '@inertiajs/react';
 import AppLayout from '@/layouts/app-layout';
 import type { BreadcrumbItem } from '@/types';
-import { ArrowLeft, Printer, ShieldAlert, Briefcase, AlertOctagon, FileSignature, CheckCircle, Clock, Users } from 'lucide-react';
+import { 
+    ArrowLeft, Printer, ShieldAlert, Briefcase, AlertOctagon, 
+    FileSignature, CheckCircle, Clock, Users, Edit, XCircle 
+} from 'lucide-react';
 
 const breadcrumbs: BreadcrumbItem[] = [
     { title: 'Official Letters', href: '/letters' },
@@ -18,6 +21,7 @@ interface Letter {
     type: string;
     subject: string;
     content: string;
+    status: 'draft' | 'issued' | 'cancelled' | 'archived';
     validity_type: string;
     validity_value: string | null;
     created_at: string;
@@ -42,7 +46,18 @@ export default function Show({ letterId, letterDetails }: Props) {
         }
     };
 
+    const getStatusConfig = (status: string) => {
+        switch (status) {
+            case 'draft': return { label: 'Draft', color: 'border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-800/30 dark:bg-amber-900/30 dark:text-amber-300' };
+            case 'issued': return { label: 'Sent / Issued', color: 'border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-800/30 dark:bg-emerald-900/30 dark:text-emerald-300' };
+            case 'cancelled': return { label: 'Cancelled', color: 'border-red-200 bg-red-50 text-red-800 dark:border-red-800/30 dark:bg-red-900/30 dark:text-red-300' };
+            case 'archived': return { label: 'Archived', color: 'border-gray-200 bg-gray-50 text-gray-800 dark:border-gray-800/30 dark:bg-gray-900/30 dark:text-gray-300' };
+            default: return { label: status, color: 'border-gray-200 bg-gray-50 text-gray-800 dark:border-gray-800/30 dark:bg-gray-900/30 dark:text-gray-300' };
+        }
+    };
+
     const { icon: TypeIcon, badgeClass } = getTypeConfig(letterDetails.type);
+    const statusConfig = getStatusConfig(letterDetails.status);
 
     // Format the validity string
     let validityStr = '';
@@ -56,16 +71,21 @@ export default function Show({ letterId, letterDetails }: Props) {
 
     // Role checks
     const isSender = letterDetails.issuer.id === auth.user.id;
-    const isRecipient = letterDetails.recipients.some(r => r.id === auth.user.id);
+    const isRecipient = letterDetails.recipients.some((r: User) => r.id === auth.user.id);
     
     // Recipient acknowledgment status
-    const myRecord = letterDetails.recipients.find(r => r.id === auth.user.id);
+    const myRecord = letterDetails.recipients.find((r: User) => r.id === auth.user.id);
     const isAcknowledged = myRecord ? !!myRecord.pivot?.read_at : false;
 
     const handleAcknowledge = () => {
-        router.post(`/letters/${letterId}/acknowledge`, {}, { 
-            preserveScroll: true 
-        });
+        router.post(`/letters/${letterId}/acknowledge`, {}, { preserveScroll: true });
+    };
+
+    const handleCancel = () => {
+        if (confirm('Are you sure you want to cancel this letter? This action cannot be undone.')) {
+            // Assumes you will create a PATCH route for this action in web.php
+            router.patch(`/letters/${letterId}/cancel`, {}, { preserveScroll: true });
+        }
     };
 
     const handlePrint = () => {
@@ -77,21 +97,46 @@ export default function Show({ letterId, letterDetails }: Props) {
             <Head title={`Letter: ${letterDetails.subject}`} />
             <div className="mx-auto flex w-full max-w-4xl flex-1 flex-col space-y-6 p-4 md:p-8">
                 
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <Link 
                         href="/letters" 
-                        className="inline-flex h-9 items-center justify-center whitespace-nowrap rounded-md border border-gray-200 bg-white px-4 py-2 text-sm font-medium shadow-sm transition-colors hover:bg-gray-100 hover:text-gray-900 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-gray-950 dark:border-gray-800 dark:bg-gray-950 dark:text-gray-50 dark:hover:bg-gray-800 dark:hover:text-gray-50 dark:focus-visible:ring-gray-300"
+                        className="inline-flex h-9 w-fit items-center justify-center whitespace-nowrap rounded-md border border-gray-200 bg-white px-4 py-2 text-sm font-medium shadow-sm transition-colors hover:bg-gray-100 hover:text-gray-900 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-gray-950 dark:border-gray-800 dark:bg-gray-950 dark:text-gray-50 dark:hover:bg-gray-800 dark:hover:text-gray-50 dark:focus-visible:ring-gray-300"
                     >
                         <ArrowLeft className="mr-2 h-4 w-4" /> 
                         Back to Inbox
                     </Link>
-                    <button 
-                        onClick={handlePrint}
-                        className="inline-flex h-9 items-center justify-center whitespace-nowrap rounded-md border border-gray-200 bg-white px-4 py-2 text-sm font-medium shadow-sm transition-colors hover:bg-gray-100 hover:text-gray-900 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-gray-950 dark:border-gray-800 dark:bg-gray-950 dark:text-gray-50 dark:hover:bg-gray-800 dark:hover:text-gray-50 dark:focus-visible:ring-gray-300"
-                    >
-                        <Printer className="mr-2 h-4 w-4" /> 
-                        Print
-                    </button>
+
+                    <div className="flex items-center gap-2">
+                        {/* Only show Edit if user is sender AND letter is a draft */}
+                        {isSender && letterDetails.status === 'draft' && (
+                            <Link 
+                                href={`/letters/${letterId}/edit`}
+                                className="inline-flex h-9 items-center justify-center whitespace-nowrap rounded-md border border-amber-200 bg-amber-50 px-4 py-2 text-sm font-medium text-amber-900 shadow-sm transition-colors hover:bg-amber-100 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-gray-950 dark:border-amber-900/50 dark:bg-amber-900/20 dark:text-amber-300 dark:hover:bg-amber-900/40"
+                            >
+                                <Edit className="mr-2 h-4 w-4" /> 
+                                Edit Draft
+                            </Link>
+                        )}
+
+                        {/* Only show Cancel if user is sender AND letter is not already cancelled/archived */}
+                        {isSender && ['draft', 'issued'].includes(letterDetails.status) && (
+                            <button 
+                                onClick={handleCancel}
+                                className="inline-flex h-9 items-center justify-center whitespace-nowrap rounded-md border border-red-200 bg-red-50 px-4 py-2 text-sm font-medium text-red-900 shadow-sm transition-colors hover:bg-red-100 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-gray-950 dark:border-red-900/50 dark:bg-red-900/20 dark:text-red-300 dark:hover:bg-red-900/40"
+                            >
+                                <XCircle className="mr-2 h-4 w-4" /> 
+                                Cancel Letter
+                            </button>
+                        )}
+
+                        <button 
+                            onClick={handlePrint}
+                            className="inline-flex h-9 items-center justify-center whitespace-nowrap rounded-md border border-gray-200 bg-white px-4 py-2 text-sm font-medium shadow-sm transition-colors hover:bg-gray-100 hover:text-gray-900 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-gray-950 dark:border-gray-800 dark:bg-gray-950 dark:text-gray-50 dark:hover:bg-gray-800 dark:hover:text-gray-50 dark:focus-visible:ring-gray-300"
+                        >
+                            <Printer className="mr-2 h-4 w-4" /> 
+                            Print
+                        </button>
+                    </div>
                 </div>
 
                 <div className="flex flex-col overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm print:shadow-none print:border-none dark:border-gray-800 dark:bg-gray-950">
@@ -116,10 +161,14 @@ export default function Show({ letterId, letterDetails }: Props) {
                     </div>
 
                     {/* Metadata Section */}
-                    <div className="grid grid-cols-1 gap-6 border-b border-gray-200 bg-gray-50/50 p-6 print:bg-transparent sm:grid-cols-2 sm:p-8 dark:border-gray-800 dark:bg-gray-900/20">
+                    <div className="grid grid-cols-1 gap-6 border-b border-gray-200 bg-gray-50/50 p-6 print:bg-transparent sm:grid-cols-3 sm:p-8 dark:border-gray-800 dark:bg-gray-900/20">
                         <div className="space-y-1.5">
-                            <span className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Issued To</span>
-                            <p className="font-medium text-gray-900 dark:text-gray-100">{letterDetails.recipients.map(r => r.name).join(', ')}</p>
+                            <span className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Status</span>
+                            <div className="flex items-center">
+                                <span className={`inline-flex items-center rounded-md border px-2.5 py-1 text-xs font-semibold ${statusConfig.color}`}>
+                                    {statusConfig.label}
+                                </span>
+                            </div>
                         </div>
                         <div className="space-y-1.5">
                             <span className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Authorized By</span>
@@ -128,7 +177,7 @@ export default function Show({ letterId, letterDetails }: Props) {
                                 <span className="text-sm text-gray-500 dark:text-gray-400">Authorized Personnel</span>
                             </div>
                         </div>
-                        <div className="space-y-1.5 sm:col-span-2">
+                        <div className="space-y-1.5">
                             <span className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Validity Period</span>
                             <div className="flex items-center">
                                 <span className="inline-flex items-center rounded-md border border-amber-200 bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-800 dark:border-amber-800/30 dark:bg-amber-900/30 dark:text-amber-300">
@@ -136,6 +185,10 @@ export default function Show({ letterId, letterDetails }: Props) {
                                     {validityStr}
                                 </span>
                             </div>
+                        </div>
+                        <div className="space-y-1.5 sm:col-span-3">
+                            <span className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Issued To</span>
+                            <p className="font-medium text-gray-900 dark:text-gray-100">{letterDetails.recipients.map(r => r.name).join(', ')}</p>
                         </div>
                     </div>
 
@@ -156,8 +209,8 @@ export default function Show({ letterId, letterDetails }: Props) {
                         </div>
                     </div>
 
-                    {/* ACTION PANEL: Visible only to Recipients */}
-                    {isRecipient && !isSender && (
+                    {/* ACTION PANEL: Visible only to Recipients IF it is actually Issued */}
+                    {isRecipient && !isSender && letterDetails.status === 'issued' && (
                         <div className="border-t border-gray-200 bg-gray-50/50 p-6 print:hidden sm:px-10 dark:border-gray-800 dark:bg-gray-900/20">
                             {isAcknowledged ? (
                                 <div className="flex items-center text-sm font-medium text-emerald-600 dark:text-emerald-500">
@@ -180,15 +233,15 @@ export default function Show({ letterId, letterDetails }: Props) {
                     )}
 
                     {/* SENDER PANEL: Tracking & Acknowledgments (Visible only to the Issuer) */}
-                    {isSender && (
+                    {isSender && letterDetails.status === 'issued' && (
                         <div className="border-t border-gray-200 bg-gray-50/50 p-6 print:hidden sm:px-10 dark:border-gray-800 dark:bg-gray-900/20">
                             <div className="mb-4 flex items-center text-sm font-semibold text-gray-900 dark:text-gray-50">
                                 <Users className="mr-2 h-4 w-4 text-gray-500 dark:text-gray-400" />
-                                Recipient Acknowledgments ({letterDetails.recipients.filter(r => r.pivot.read_at).length}/{letterDetails.recipients.length})
+                                Recipient Acknowledgments ({letterDetails.recipients.filter((r: any) => r.pivot.read_at).length}/{letterDetails.recipients.length})
                             </div>
                             
                             <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                                {letterDetails.recipients.map(recipient => (
+                                {letterDetails.recipients.map((recipient: any) => (
                                     <li 
                                         key={recipient.id} 
                                         className="flex items-center justify-between rounded-md border border-gray-200 bg-white p-3 shadow-sm dark:border-gray-800 dark:bg-gray-950"
@@ -216,4 +269,4 @@ export default function Show({ letterId, letterDetails }: Props) {
             </div>
         </AppLayout>
     );
-}
+}       

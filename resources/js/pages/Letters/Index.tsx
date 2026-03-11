@@ -17,6 +17,7 @@ interface Letter {
     id: number;
     type: string;
     subject: string;
+    status: 'draft' | 'issued' | 'cancelled' | 'archived';
     validity_type: string;
     validity_value: string | null;
     created_at: string;
@@ -41,6 +42,16 @@ export default function Index({ letters = [] }: Props) {
             case 'Appointment': return { icon: Briefcase, badgeClass: 'border-emerald-200 bg-emerald-100 text-emerald-800 dark:border-emerald-800/30 dark:bg-emerald-900/30 dark:text-emerald-300' };
             case 'Warning': return { icon: AlertOctagon, badgeClass: 'border-red-200 bg-red-100 text-red-800 dark:border-red-800/30 dark:bg-red-900/30 dark:text-red-300' };
             default: return { icon: FileSignature, badgeClass: 'border-blue-200 bg-blue-100 text-blue-800 dark:border-blue-800/30 dark:bg-blue-900/30 dark:text-blue-300' };
+        }
+    };
+
+    const getStatusConfig = (status: string) => {
+        switch (status) {
+            case 'draft': return { label: 'Draft', color: 'border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-800/30 dark:bg-amber-900/30 dark:text-amber-300' };
+            case 'issued': return { label: 'Issued', color: 'border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-800/30 dark:bg-emerald-900/30 dark:text-emerald-300' };
+            case 'cancelled': return { label: 'Cancelled', color: 'border-red-200 bg-red-50 text-red-800 dark:border-red-800/30 dark:bg-red-900/30 dark:text-red-300' };
+            case 'archived': return { label: 'Archived', color: 'border-gray-200 bg-gray-50 text-gray-800 dark:border-gray-800/30 dark:bg-gray-900/30 dark:text-gray-300' };
+            default: return { label: status, color: 'border-gray-200 bg-gray-50 text-gray-800 dark:border-gray-800/30 dark:bg-gray-900/30 dark:text-gray-300' };
         }
     };
 
@@ -69,6 +80,7 @@ export default function Index({ letters = [] }: Props) {
                 id: letter.id,
                 type: letter.type,
                 subject: letter.subject,
+                status: letter.status,
                 recipients: letter.recipients.map(r => r.name),
                 issuer: letter.issuer.name,
                 date: letter.created_at,
@@ -161,6 +173,7 @@ export default function Index({ letters = [] }: Props) {
                                 <div className="flex flex-col divide-y divide-gray-200 dark:divide-gray-800">
                                     {filteredLetters.map(letter => {
                                         const { icon: Icon, badgeClass } = getTypeConfig(letter.type);
+                                        const statusConfig = getStatusConfig(letter.status);
                                         const isUnread = !letter.read && view === 'received';
                                         
                                         return (
@@ -178,14 +191,19 @@ export default function Index({ letters = [] }: Props) {
                                                             <span className={`truncate text-sm ${isUnread ? 'font-semibold text-gray-900 dark:text-gray-50' : 'font-medium text-gray-900 dark:text-gray-200'}`}>
                                                                 {letter.subject}
                                                             </span>
+                                                        </div>
+                                                        <div className="mt-1 flex items-center space-x-2">
                                                             <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold transition-colors ${badgeClass}`}>
                                                                 {letter.type}
                                                             </span>
+                                                            <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold transition-colors ${statusConfig.color}`}>
+                                                                {statusConfig.label}
+                                                            </span>
                                                         </div>
-                                                        <span className="mt-1 truncate text-xs text-gray-500 dark:text-gray-400">
+                                                        <span className="mt-1.5 truncate text-xs text-gray-500 dark:text-gray-400">
                                                             {view === 'received' ? `From: ${letter.issuer}` : `To: ${letter.recipients.join(', ')}`}
                                                         </span>
-                                                        <span className="mt-1.5 flex items-center text-xs font-medium text-gray-500 dark:text-gray-400">
+                                                        <span className="mt-1 flex items-center text-xs font-medium text-gray-500 dark:text-gray-400">
                                                             <Mail className="mr-1.5 h-3 w-3" /> Validity: {letter.validity}
                                                         </span>
                                                     </div>

@@ -8,6 +8,11 @@ return new class extends Migration {
     public function up(): void {
         Schema::create('letters', function (Blueprint $table) {
             $table->id();
+            // status enume
+            $table->enum('status', ['draft', 'issued', 'cancelled', 'archived'])
+                  ->default('draft')
+                  ->index();
+
             $table->foreignId('issued_by')->constrained('users')->cascadeOnDelete();
             $table->string('type')->index(); // Responsibility, Appointment, Warning, General
             $table->string('subject');

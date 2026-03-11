@@ -2,7 +2,11 @@ import { useState, useMemo, useRef } from 'react';
 import { Head, useForm, Link } from '@inertiajs/react';
 import AppLayout from '@/layouts/app-layout';
 import type { BreadcrumbItem } from '@/types';
-import { ArrowLeft, ShieldAlert, Briefcase, FileSignature, AlertOctagon, Check, Infinity, Calendar, Plane, Sun, Search, X, CheckCircle2, Send } from 'lucide-react';
+import { 
+    ArrowLeft, ShieldAlert, Briefcase, FileSignature, 
+    AlertOctagon, Check, Infinity, Calendar, Plane, 
+    Sun, Search, X, CheckCircle2, Send 
+} from 'lucide-react';
 import { ChevronStepper } from '@/components/ChevronStepper';
 
 const breadcrumbs: BreadcrumbItem[] = [

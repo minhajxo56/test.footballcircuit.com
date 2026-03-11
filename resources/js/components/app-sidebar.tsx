@@ -70,7 +70,6 @@ export function AppSidebar() {
                     { title: 'Employees Directory', href: '/users', icon: Users, allowed: ROLES.HR_UP },
                     { title: 'Official Letters', href: '/letters', icon: Mail, allowed: ROLES.EMPLOYEE_UP },
                     { title: 'Activity Logs', href: '/activity-logs', icon: FolderGit2, allowed: ROLES.ADMIN_ONLY },
-                    { title: 'System Settings', href: '/settings', icon: Settings, allowed: ROLES.ADMIN_ONLY },
                 ]
             }
         ];
