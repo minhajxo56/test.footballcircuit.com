@@ -101,8 +101,6 @@ class UserController extends Controller
                 $user->notify(new NewUserCredentials($generatedPassword));
             }
             
-            dd(-1);
-
             return $user;
         });
 

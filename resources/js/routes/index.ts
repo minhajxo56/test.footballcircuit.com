@@ -381,7 +381,7 @@ dashboard.form = dashboardForm
 
 /**
 * @see \App\Http\Controllers\UserApplicationController::myApplications
-* @see app/Http/Controllers/UserApplicationController.php:32
+* @see app/Http/Controllers/UserApplicationController.php:38
 * @route '/my-applications'
 */
 export const myApplications = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -396,7 +396,7 @@ myApplications.definition = {
 
 /**
 * @see \App\Http\Controllers\UserApplicationController::myApplications
-* @see app/Http/Controllers/UserApplicationController.php:32
+* @see app/Http/Controllers/UserApplicationController.php:38
 * @route '/my-applications'
 */
 myApplications.url = (options?: RouteQueryOptions) => {
@@ -405,7 +405,7 @@ myApplications.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\UserApplicationController::myApplications
-* @see app/Http/Controllers/UserApplicationController.php:32
+* @see app/Http/Controllers/UserApplicationController.php:38
 * @route '/my-applications'
 */
 myApplications.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -415,7 +415,7 @@ myApplications.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
 
 /**
 * @see \App\Http\Controllers\UserApplicationController::myApplications
-* @see app/Http/Controllers/UserApplicationController.php:32
+* @see app/Http/Controllers/UserApplicationController.php:38
 * @route '/my-applications'
 */
 myApplications.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -425,7 +425,7 @@ myApplications.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => 
 
 /**
 * @see \App\Http\Controllers\UserApplicationController::myApplications
-* @see app/Http/Controllers/UserApplicationController.php:32
+* @see app/Http/Controllers/UserApplicationController.php:38
 * @route '/my-applications'
 */
 const myApplicationsForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -435,7 +435,7 @@ const myApplicationsForm = (options?: RouteQueryOptions): RouteFormDefinition<'g
 
 /**
 * @see \App\Http\Controllers\UserApplicationController::myApplications
-* @see app/Http/Controllers/UserApplicationController.php:32
+* @see app/Http/Controllers/UserApplicationController.php:38
 * @route '/my-applications'
 */
 myApplicationsForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -445,7 +445,7 @@ myApplicationsForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get
 
 /**
 * @see \App\Http\Controllers\UserApplicationController::myApplications
-* @see app/Http/Controllers/UserApplicationController.php:32
+* @see app/Http/Controllers/UserApplicationController.php:38
 * @route '/my-applications'
 */
 myApplicationsForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({

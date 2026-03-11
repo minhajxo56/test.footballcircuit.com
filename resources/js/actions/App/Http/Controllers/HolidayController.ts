@@ -1,7 +1,7 @@
 import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition, applyUrlDefaults } from './../../../../wayfinder'
 /**
 * @see \App\Http\Controllers\HolidayController::index
-* @see app/Http/Controllers/HolidayController.php:5
+* @see [unknown]:0
 * @route '/holidays'
 */
 export const index = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -16,7 +16,7 @@ index.definition = {
 
 /**
 * @see \App\Http\Controllers\HolidayController::index
-* @see app/Http/Controllers/HolidayController.php:5
+* @see [unknown]:0
 * @route '/holidays'
 */
 index.url = (options?: RouteQueryOptions) => {
@@ -25,7 +25,7 @@ index.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\HolidayController::index
-* @see app/Http/Controllers/HolidayController.php:5
+* @see [unknown]:0
 * @route '/holidays'
 */
 index.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -35,7 +35,7 @@ index.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
 
 /**
 * @see \App\Http\Controllers\HolidayController::index
-* @see app/Http/Controllers/HolidayController.php:5
+* @see [unknown]:0
 * @route '/holidays'
 */
 index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -45,7 +45,7 @@ index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 
 /**
 * @see \App\Http\Controllers\HolidayController::index
-* @see app/Http/Controllers/HolidayController.php:5
+* @see [unknown]:0
 * @route '/holidays'
 */
 const indexForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -55,7 +55,7 @@ const indexForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => (
 
 /**
 * @see \App\Http\Controllers\HolidayController::index
-* @see app/Http/Controllers/HolidayController.php:5
+* @see [unknown]:0
 * @route '/holidays'
 */
 indexForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -65,7 +65,7 @@ indexForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
 
 /**
 * @see \App\Http\Controllers\HolidayController::index
-* @see app/Http/Controllers/HolidayController.php:5
+* @see [unknown]:0
 * @route '/holidays'
 */
 indexForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -82,7 +82,7 @@ index.form = indexForm
 
 /**
 * @see \App\Http\Controllers\HolidayController::create
-* @see app/Http/Controllers/HolidayController.php:0
+* @see [unknown]:0
 * @route '/holidays/create'
 */
 export const create = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -97,7 +97,7 @@ create.definition = {
 
 /**
 * @see \App\Http\Controllers\HolidayController::create
-* @see app/Http/Controllers/HolidayController.php:0
+* @see [unknown]:0
 * @route '/holidays/create'
 */
 create.url = (options?: RouteQueryOptions) => {
@@ -106,7 +106,7 @@ create.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\HolidayController::create
-* @see app/Http/Controllers/HolidayController.php:0
+* @see [unknown]:0
 * @route '/holidays/create'
 */
 create.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -116,7 +116,7 @@ create.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
 
 /**
 * @see \App\Http\Controllers\HolidayController::create
-* @see app/Http/Controllers/HolidayController.php:0
+* @see [unknown]:0
 * @route '/holidays/create'
 */
 create.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -126,7 +126,7 @@ create.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 
 /**
 * @see \App\Http\Controllers\HolidayController::create
-* @see app/Http/Controllers/HolidayController.php:0
+* @see [unknown]:0
 * @route '/holidays/create'
 */
 const createForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -136,7 +136,7 @@ const createForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => 
 
 /**
 * @see \App\Http\Controllers\HolidayController::create
-* @see app/Http/Controllers/HolidayController.php:0
+* @see [unknown]:0
 * @route '/holidays/create'
 */
 createForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -146,7 +146,7 @@ createForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
 
 /**
 * @see \App\Http\Controllers\HolidayController::create
-* @see app/Http/Controllers/HolidayController.php:0
+* @see [unknown]:0
 * @route '/holidays/create'
 */
 createForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -163,7 +163,7 @@ create.form = createForm
 
 /**
 * @see \App\Http\Controllers\HolidayController::store
-* @see app/Http/Controllers/HolidayController.php:0
+* @see [unknown]:0
 * @route '/holidays'
 */
 export const store = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -178,7 +178,7 @@ store.definition = {
 
 /**
 * @see \App\Http\Controllers\HolidayController::store
-* @see app/Http/Controllers/HolidayController.php:0
+* @see [unknown]:0
 * @route '/holidays'
 */
 store.url = (options?: RouteQueryOptions) => {
@@ -187,7 +187,7 @@ store.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\HolidayController::store
-* @see app/Http/Controllers/HolidayController.php:0
+* @see [unknown]:0
 * @route '/holidays'
 */
 store.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -197,7 +197,7 @@ store.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
 
 /**
 * @see \App\Http\Controllers\HolidayController::store
-* @see app/Http/Controllers/HolidayController.php:0
+* @see [unknown]:0
 * @route '/holidays'
 */
 const storeForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -207,7 +207,7 @@ const storeForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => 
 
 /**
 * @see \App\Http\Controllers\HolidayController::store
-* @see app/Http/Controllers/HolidayController.php:0
+* @see [unknown]:0
 * @route '/holidays'
 */
 storeForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -219,7 +219,7 @@ store.form = storeForm
 
 /**
 * @see \App\Http\Controllers\HolidayController::show
-* @see app/Http/Controllers/HolidayController.php:0
+* @see [unknown]:0
 * @route '/holidays/{holiday}'
 */
 export const show = (args: { holiday: string | number } | [holiday: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -234,7 +234,7 @@ show.definition = {
 
 /**
 * @see \App\Http\Controllers\HolidayController::show
-* @see app/Http/Controllers/HolidayController.php:0
+* @see [unknown]:0
 * @route '/holidays/{holiday}'
 */
 show.url = (args: { holiday: string | number } | [holiday: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -261,7 +261,7 @@ show.url = (args: { holiday: string | number } | [holiday: string | number ] | s
 
 /**
 * @see \App\Http\Controllers\HolidayController::show
-* @see app/Http/Controllers/HolidayController.php:0
+* @see [unknown]:0
 * @route '/holidays/{holiday}'
 */
 show.get = (args: { holiday: string | number } | [holiday: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -271,7 +271,7 @@ show.get = (args: { holiday: string | number } | [holiday: string | number ] | s
 
 /**
 * @see \App\Http\Controllers\HolidayController::show
-* @see app/Http/Controllers/HolidayController.php:0
+* @see [unknown]:0
 * @route '/holidays/{holiday}'
 */
 show.head = (args: { holiday: string | number } | [holiday: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -281,7 +281,7 @@ show.head = (args: { holiday: string | number } | [holiday: string | number ] | 
 
 /**
 * @see \App\Http\Controllers\HolidayController::show
-* @see app/Http/Controllers/HolidayController.php:0
+* @see [unknown]:0
 * @route '/holidays/{holiday}'
 */
 const showForm = (args: { holiday: string | number } | [holiday: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -291,7 +291,7 @@ const showForm = (args: { holiday: string | number } | [holiday: string | number
 
 /**
 * @see \App\Http\Controllers\HolidayController::show
-* @see app/Http/Controllers/HolidayController.php:0
+* @see [unknown]:0
 * @route '/holidays/{holiday}'
 */
 showForm.get = (args: { holiday: string | number } | [holiday: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -301,7 +301,7 @@ showForm.get = (args: { holiday: string | number } | [holiday: string | number ]
 
 /**
 * @see \App\Http\Controllers\HolidayController::show
-* @see app/Http/Controllers/HolidayController.php:0
+* @see [unknown]:0
 * @route '/holidays/{holiday}'
 */
 showForm.head = (args: { holiday: string | number } | [holiday: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -318,7 +318,7 @@ show.form = showForm
 
 /**
 * @see \App\Http\Controllers\HolidayController::edit
-* @see app/Http/Controllers/HolidayController.php:0
+* @see [unknown]:0
 * @route '/holidays/{holiday}/edit'
 */
 export const edit = (args: { holiday: string | number } | [holiday: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -333,7 +333,7 @@ edit.definition = {
 
 /**
 * @see \App\Http\Controllers\HolidayController::edit
-* @see app/Http/Controllers/HolidayController.php:0
+* @see [unknown]:0
 * @route '/holidays/{holiday}/edit'
 */
 edit.url = (args: { holiday: string | number } | [holiday: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -360,7 +360,7 @@ edit.url = (args: { holiday: string | number } | [holiday: string | number ] | s
 
 /**
 * @see \App\Http\Controllers\HolidayController::edit
-* @see app/Http/Controllers/HolidayController.php:0
+* @see [unknown]:0
 * @route '/holidays/{holiday}/edit'
 */
 edit.get = (args: { holiday: string | number } | [holiday: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -370,7 +370,7 @@ edit.get = (args: { holiday: string | number } | [holiday: string | number ] | s
 
 /**
 * @see \App\Http\Controllers\HolidayController::edit
-* @see app/Http/Controllers/HolidayController.php:0
+* @see [unknown]:0
 * @route '/holidays/{holiday}/edit'
 */
 edit.head = (args: { holiday: string | number } | [holiday: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -380,7 +380,7 @@ edit.head = (args: { holiday: string | number } | [holiday: string | number ] | 
 
 /**
 * @see \App\Http\Controllers\HolidayController::edit
-* @see app/Http/Controllers/HolidayController.php:0
+* @see [unknown]:0
 * @route '/holidays/{holiday}/edit'
 */
 const editForm = (args: { holiday: string | number } | [holiday: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -390,7 +390,7 @@ const editForm = (args: { holiday: string | number } | [holiday: string | number
 
 /**
 * @see \App\Http\Controllers\HolidayController::edit
-* @see app/Http/Controllers/HolidayController.php:0
+* @see [unknown]:0
 * @route '/holidays/{holiday}/edit'
 */
 editForm.get = (args: { holiday: string | number } | [holiday: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -400,7 +400,7 @@ editForm.get = (args: { holiday: string | number } | [holiday: string | number ]
 
 /**
 * @see \App\Http\Controllers\HolidayController::edit
-* @see app/Http/Controllers/HolidayController.php:0
+* @see [unknown]:0
 * @route '/holidays/{holiday}/edit'
 */
 editForm.head = (args: { holiday: string | number } | [holiday: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -417,7 +417,7 @@ edit.form = editForm
 
 /**
 * @see \App\Http\Controllers\HolidayController::update
-* @see app/Http/Controllers/HolidayController.php:0
+* @see [unknown]:0
 * @route '/holidays/{holiday}'
 */
 export const update = (args: { holiday: string | number } | [holiday: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'put'> => ({
@@ -432,7 +432,7 @@ update.definition = {
 
 /**
 * @see \App\Http\Controllers\HolidayController::update
-* @see app/Http/Controllers/HolidayController.php:0
+* @see [unknown]:0
 * @route '/holidays/{holiday}'
 */
 update.url = (args: { holiday: string | number } | [holiday: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -459,7 +459,7 @@ update.url = (args: { holiday: string | number } | [holiday: string | number ] |
 
 /**
 * @see \App\Http\Controllers\HolidayController::update
-* @see app/Http/Controllers/HolidayController.php:0
+* @see [unknown]:0
 * @route '/holidays/{holiday}'
 */
 update.put = (args: { holiday: string | number } | [holiday: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'put'> => ({
@@ -469,7 +469,7 @@ update.put = (args: { holiday: string | number } | [holiday: string | number ] |
 
 /**
 * @see \App\Http\Controllers\HolidayController::update
-* @see app/Http/Controllers/HolidayController.php:0
+* @see [unknown]:0
 * @route '/holidays/{holiday}'
 */
 update.patch = (args: { holiday: string | number } | [holiday: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'patch'> => ({
@@ -479,7 +479,7 @@ update.patch = (args: { holiday: string | number } | [holiday: string | number ]
 
 /**
 * @see \App\Http\Controllers\HolidayController::update
-* @see app/Http/Controllers/HolidayController.php:0
+* @see [unknown]:0
 * @route '/holidays/{holiday}'
 */
 const updateForm = (args: { holiday: string | number } | [holiday: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -494,7 +494,7 @@ const updateForm = (args: { holiday: string | number } | [holiday: string | numb
 
 /**
 * @see \App\Http\Controllers\HolidayController::update
-* @see app/Http/Controllers/HolidayController.php:0
+* @see [unknown]:0
 * @route '/holidays/{holiday}'
 */
 updateForm.put = (args: { holiday: string | number } | [holiday: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -509,7 +509,7 @@ updateForm.put = (args: { holiday: string | number } | [holiday: string | number
 
 /**
 * @see \App\Http\Controllers\HolidayController::update
-* @see app/Http/Controllers/HolidayController.php:0
+* @see [unknown]:0
 * @route '/holidays/{holiday}'
 */
 updateForm.patch = (args: { holiday: string | number } | [holiday: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -526,7 +526,7 @@ update.form = updateForm
 
 /**
 * @see \App\Http\Controllers\HolidayController::destroy
-* @see app/Http/Controllers/HolidayController.php:0
+* @see [unknown]:0
 * @route '/holidays/{holiday}'
 */
 export const destroy = (args: { holiday: string | number } | [holiday: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'delete'> => ({
@@ -541,7 +541,7 @@ destroy.definition = {
 
 /**
 * @see \App\Http\Controllers\HolidayController::destroy
-* @see app/Http/Controllers/HolidayController.php:0
+* @see [unknown]:0
 * @route '/holidays/{holiday}'
 */
 destroy.url = (args: { holiday: string | number } | [holiday: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -568,7 +568,7 @@ destroy.url = (args: { holiday: string | number } | [holiday: string | number ] 
 
 /**
 * @see \App\Http\Controllers\HolidayController::destroy
-* @see app/Http/Controllers/HolidayController.php:0
+* @see [unknown]:0
 * @route '/holidays/{holiday}'
 */
 destroy.delete = (args: { holiday: string | number } | [holiday: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'delete'> => ({
@@ -578,7 +578,7 @@ destroy.delete = (args: { holiday: string | number } | [holiday: string | number
 
 /**
 * @see \App\Http\Controllers\HolidayController::destroy
-* @see app/Http/Controllers/HolidayController.php:0
+* @see [unknown]:0
 * @route '/holidays/{holiday}'
 */
 const destroyForm = (args: { holiday: string | number } | [holiday: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -593,7 +593,7 @@ const destroyForm = (args: { holiday: string | number } | [holiday: string | num
 
 /**
 * @see \App\Http\Controllers\HolidayController::destroy
-* @see app/Http/Controllers/HolidayController.php:0
+* @see [unknown]:0
 * @route '/holidays/{holiday}'
 */
 destroyForm.delete = (args: { holiday: string | number } | [holiday: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({

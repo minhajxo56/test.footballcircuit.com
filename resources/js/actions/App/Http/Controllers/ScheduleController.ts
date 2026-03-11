@@ -1,7 +1,7 @@
 import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition, applyUrlDefaults } from './../../../../wayfinder'
 /**
 * @see \App\Http\Controllers\ScheduleController::mySchedule
-* @see app/Http/Controllers/ScheduleController.php:215
+* @see app/Http/Controllers/ScheduleController.php:172
 * @route '/my-schedule'
 */
 export const mySchedule = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -16,7 +16,7 @@ mySchedule.definition = {
 
 /**
 * @see \App\Http\Controllers\ScheduleController::mySchedule
-* @see app/Http/Controllers/ScheduleController.php:215
+* @see app/Http/Controllers/ScheduleController.php:172
 * @route '/my-schedule'
 */
 mySchedule.url = (options?: RouteQueryOptions) => {
@@ -25,7 +25,7 @@ mySchedule.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\ScheduleController::mySchedule
-* @see app/Http/Controllers/ScheduleController.php:215
+* @see app/Http/Controllers/ScheduleController.php:172
 * @route '/my-schedule'
 */
 mySchedule.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -35,7 +35,7 @@ mySchedule.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
 
 /**
 * @see \App\Http\Controllers\ScheduleController::mySchedule
-* @see app/Http/Controllers/ScheduleController.php:215
+* @see app/Http/Controllers/ScheduleController.php:172
 * @route '/my-schedule'
 */
 mySchedule.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -45,7 +45,7 @@ mySchedule.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 
 /**
 * @see \App\Http\Controllers\ScheduleController::mySchedule
-* @see app/Http/Controllers/ScheduleController.php:215
+* @see app/Http/Controllers/ScheduleController.php:172
 * @route '/my-schedule'
 */
 const myScheduleForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -55,7 +55,7 @@ const myScheduleForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'>
 
 /**
 * @see \App\Http\Controllers\ScheduleController::mySchedule
-* @see app/Http/Controllers/ScheduleController.php:215
+* @see app/Http/Controllers/ScheduleController.php:172
 * @route '/my-schedule'
 */
 myScheduleForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -65,7 +65,7 @@ myScheduleForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> =
 
 /**
 * @see \App\Http\Controllers\ScheduleController::mySchedule
-* @see app/Http/Controllers/ScheduleController.php:215
+* @see app/Http/Controllers/ScheduleController.php:172
 * @route '/my-schedule'
 */
 myScheduleForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -82,7 +82,7 @@ mySchedule.form = myScheduleForm
 
 /**
 * @see \App\Http\Controllers\ScheduleController::store
-* @see app/Http/Controllers/ScheduleController.php:94
+* @see app/Http/Controllers/ScheduleController.php:93
 * @route '/schedules/publish'
 */
 const storeb4885f4ade70e65c88da309cc8d9e9ca = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -97,7 +97,7 @@ storeb4885f4ade70e65c88da309cc8d9e9ca.definition = {
 
 /**
 * @see \App\Http\Controllers\ScheduleController::store
-* @see app/Http/Controllers/ScheduleController.php:94
+* @see app/Http/Controllers/ScheduleController.php:93
 * @route '/schedules/publish'
 */
 storeb4885f4ade70e65c88da309cc8d9e9ca.url = (options?: RouteQueryOptions) => {
@@ -106,7 +106,7 @@ storeb4885f4ade70e65c88da309cc8d9e9ca.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\ScheduleController::store
-* @see app/Http/Controllers/ScheduleController.php:94
+* @see app/Http/Controllers/ScheduleController.php:93
 * @route '/schedules/publish'
 */
 storeb4885f4ade70e65c88da309cc8d9e9ca.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -116,7 +116,7 @@ storeb4885f4ade70e65c88da309cc8d9e9ca.post = (options?: RouteQueryOptions): Rout
 
 /**
 * @see \App\Http\Controllers\ScheduleController::store
-* @see app/Http/Controllers/ScheduleController.php:94
+* @see app/Http/Controllers/ScheduleController.php:93
 * @route '/schedules/publish'
 */
 const storeb4885f4ade70e65c88da309cc8d9e9caForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -126,7 +126,7 @@ const storeb4885f4ade70e65c88da309cc8d9e9caForm = (options?: RouteQueryOptions):
 
 /**
 * @see \App\Http\Controllers\ScheduleController::store
-* @see app/Http/Controllers/ScheduleController.php:94
+* @see app/Http/Controllers/ScheduleController.php:93
 * @route '/schedules/publish'
 */
 storeb4885f4ade70e65c88da309cc8d9e9caForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -137,7 +137,7 @@ storeb4885f4ade70e65c88da309cc8d9e9caForm.post = (options?: RouteQueryOptions): 
 storeb4885f4ade70e65c88da309cc8d9e9ca.form = storeb4885f4ade70e65c88da309cc8d9e9caForm
 /**
 * @see \App\Http\Controllers\ScheduleController::store
-* @see app/Http/Controllers/ScheduleController.php:94
+* @see app/Http/Controllers/ScheduleController.php:93
 * @route '/schedules'
 */
 const storee1f9edf590e2d1f4bd9768a922a3f602 = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -152,7 +152,7 @@ storee1f9edf590e2d1f4bd9768a922a3f602.definition = {
 
 /**
 * @see \App\Http\Controllers\ScheduleController::store
-* @see app/Http/Controllers/ScheduleController.php:94
+* @see app/Http/Controllers/ScheduleController.php:93
 * @route '/schedules'
 */
 storee1f9edf590e2d1f4bd9768a922a3f602.url = (options?: RouteQueryOptions) => {
@@ -161,7 +161,7 @@ storee1f9edf590e2d1f4bd9768a922a3f602.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\ScheduleController::store
-* @see app/Http/Controllers/ScheduleController.php:94
+* @see app/Http/Controllers/ScheduleController.php:93
 * @route '/schedules'
 */
 storee1f9edf590e2d1f4bd9768a922a3f602.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -171,7 +171,7 @@ storee1f9edf590e2d1f4bd9768a922a3f602.post = (options?: RouteQueryOptions): Rout
 
 /**
 * @see \App\Http\Controllers\ScheduleController::store
-* @see app/Http/Controllers/ScheduleController.php:94
+* @see app/Http/Controllers/ScheduleController.php:93
 * @route '/schedules'
 */
 const storee1f9edf590e2d1f4bd9768a922a3f602Form = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -181,7 +181,7 @@ const storee1f9edf590e2d1f4bd9768a922a3f602Form = (options?: RouteQueryOptions):
 
 /**
 * @see \App\Http\Controllers\ScheduleController::store
-* @see app/Http/Controllers/ScheduleController.php:94
+* @see app/Http/Controllers/ScheduleController.php:93
 * @route '/schedules'
 */
 storee1f9edf590e2d1f4bd9768a922a3f602Form.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
