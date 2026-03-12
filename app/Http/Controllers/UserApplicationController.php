@@ -12,28 +12,29 @@ use Illuminate\Support\Facades\Auth;
 
 class UserApplicationController extends Controller
 {
-    public function index(Request $request)
-    {
-        $this->authorize('viewAny', UserApplication::class);
+public function index(Request $request)
+{
+    $user = $request->user();
+    
+    $applications = UserApplication::query();
 
-        $user = $request->user();
-
-        $query = UserApplication::with(['user.employee', 'escalatedRole'])
-            ->where(function($q) use ($user) {
-                $q->whereNull('escalated_to_role')
-                  ->orWhere('escalated_to_role', $user->role_id);
-            });
-
-        if ($user->role->name === 'Team_In_Charge') {
-            $query->whereHas('user.employee', function($q) use ($user) {
-                $q->where('department_id', $user->employee->department_id);
-            });
-        }
-
-        return Inertia::render('Applications/Index', [
-            'applications' => $query->latest()->get()
-        ]);
+    if ($user->role->name === 'Team_In_Charge') {
+        // Query through the user's employee profile to check the department
+        $applications->whereHas('user.employee', function ($query) use ($user) {
+            $query->where('department_id', $user->employee->department_id);
+        })->where('user_id', '!=', $user->id); // Make sure they don't see their own
+        
+    } elseif (in_array($user->role->name, ['HR', 'CEO', 'Admin'])) {
+        // Upper management sees everything
+    } else {
+        // Regular employees shouldn't be on the main index, but just in case:
+        $applications->where('user_id', $user->id);
     }
+
+    return inertia('Applications/Index', [
+        'applications' => $applications->with(['user', 'approver', 'escalatedRole'])->get()
+    ]);
+}
 
     public function myApplications(Request $request)
     {
