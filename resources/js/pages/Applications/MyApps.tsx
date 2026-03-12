@@ -169,13 +169,16 @@ export default function MyApps({ applications = [] }: { applications: any[] }) {
                             </div>
 
                             <div className="flex items-center justify-between border-t border-gray-100 pt-4 dark:border-gray-800">
-                                <span className="inline-flex items-center rounded-md border border-gray-200 bg-gray-50 px-2 py-0.5 text-xs font-semibold capitalize text-gray-600 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-400">
-                                    {app.type}
-                                </span>
                                 <div className={getStatusStyle(app.status)}>
                                     <StatusIcon status={app.status} />
                                     <span>{app.status}</span>
                                 </div>
+                                <button 
+                                    className="inline-flex items-center text-sm font-medium text-gray-500 hover:text-gray-900 dark:hover:text-gray-200"
+                                    onClick={(e) => { e.stopPropagation(); setPreviewItem(app); }}
+                                >
+                                    Review <ArrowUpRight className="ml-1 h-3.5 w-3.5" />
+                                </button>
                             </div>
                         </div>
                     ))}

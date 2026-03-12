@@ -4,7 +4,7 @@ import AppLayout from '@/layouts/app-layout';
 import type { BreadcrumbItem } from '@/types';
 import { 
     ArrowLeft, Printer, CheckCircle, XCircle, ArrowUpRight, 
-    FileText, Calendar, Building, User, Paperclip, Clock, Trash2
+    FileText, Calendar, Building, User, Paperclip, Clock, Trash2, Edit
 } from 'lucide-react';
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -19,7 +19,7 @@ export default function Show({ application }: { application: any }) {
 
     const isCreator = auth.user.id === application.user_id;
     const isPendingOrEscalated = ['pending', 'escalated'].includes(application.status);
-    const canTakeAction = !isCreator && isPendingOrEscalated; // Simplified check (Policy handles backend security)
+    const canTakeAction = !isCreator && isPendingOrEscalated; 
 
     const getStatusConfig = (status: string) => {
         const base = "inline-flex items-center rounded-md border px-2.5 py-1 text-xs font-semibold uppercase tracking-wider";
@@ -37,7 +37,6 @@ export default function Show({ application }: { application: any }) {
     const empName = application.user?.employee ? `${application.user.employee.first_name} ${application.user.employee.last_name}` : application.user?.name;
     const deptName = application.user?.employee?.department?.name || 'General';
 
-    // Actions
     const handleResolve = (action: 'approve' | 'reject') => {
         setIsProcessing(true);
         router.post(`/applications/${application.id}/resolve`, { action }, {
@@ -67,7 +66,6 @@ export default function Show({ application }: { application: any }) {
             <Head title={`Application: ${application.title}`} />
             <div className="mx-auto flex w-full max-w-4xl flex-1 flex-col space-y-6 p-4 md:p-8">
                 
-                {/* Success Banner */}
                 {flash?.success && (
                     <div className="rounded-md bg-green-50 p-4 border border-green-200 dark:bg-green-950/50 dark:border-green-900">
                         <div className="flex items-center">
@@ -87,6 +85,15 @@ export default function Show({ application }: { application: any }) {
                     </button>
 
                     <div className="flex items-center gap-2">
+                        {/* ONLY DRAFTS CAN BE EDITED */}
+                        {isCreator && application.status === 'draft' && (
+                            <Link 
+                                href={`/applications/${application.id}/edit`}
+                                className="inline-flex h-9 items-center justify-center whitespace-nowrap rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-gray-50 shadow transition-colors hover:bg-gray-800 dark:bg-gray-50 dark:text-gray-900 dark:hover:bg-gray-200"
+                            >
+                                <Edit className="mr-2 h-4 w-4" /> Edit & Submit Draft
+                            </Link>
+                        )}
                         {isCreator && ['draft', 'pending'].includes(application.status) && (
                             <button 
                                 onClick={handleDelete}

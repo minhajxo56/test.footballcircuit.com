@@ -30,6 +30,7 @@ export default function Form({ application }: { application?: any }) {
     const formRef = useRef<HTMLFormElement>(null);
     const [currentStep, setCurrentStep] = useState(1);
 
+    // CRITICAL FIX: Include action_type and _method right in the data initialization
     const { data, setData, post, processing, errors, transform } = useForm({
         type: application?.type || 'leave',
         title: application?.title || '',
@@ -37,6 +38,8 @@ export default function Form({ application }: { application?: any }) {
         start_date: application?.start_date || '',
         end_date: application?.end_date || '',
         attachment: null as File | null,
+        action_type: application?.status || 'draft',
+        _method: isEdit ? 'PUT' : 'POST'
     });
 
     const handleSubmit = (actionType: 'draft' | 'send') => {
@@ -54,15 +57,14 @@ export default function Form({ application }: { application?: any }) {
             onSuccess: () => setCurrentStep(actionType === 'draft' ? 2 : 3),
         };
 
-        // Even for edits, we use POST because of file uploads in Laravel/Inertia
+        // CRITICAL FIX: Since we use _method: 'PUT' in the payload, we use post() for BOTH create and edit
         if (isEdit) {
-            post(`/applications/${application.id}?_method=PUT`, requestOptions);
+            post(`/applications/${application.id}`, requestOptions);
         } else {
             post('/applications', requestOptions);
         }
     };
 
-    // Stepper click handler maps to the submit functions
     const handleStepClick = (targetStep: number) => {
         if (targetStep === currentStep) return;
         if (targetStep === 1) { setCurrentStep(1); return; }
