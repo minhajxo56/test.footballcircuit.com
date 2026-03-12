@@ -5,36 +5,46 @@ namespace App\Http\Controllers;
 use App\Models\UserApplication;
 use App\Models\Role;
 use App\Models\ActivityLog;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Notification;
+use App\Notifications\ApplicationSubmitted;
+use App\Notifications\ApplicationEscalated;
 
 class UserApplicationController extends Controller
 {
 public function index(Request $request)
-{
-    $user = $request->user();
-    
-    $applications = UserApplication::query();
-
-    if ($user->role->name === 'Team_In_Charge') {
-        // Query through the user's employee profile to check the department
-        $applications->whereHas('user.employee', function ($query) use ($user) {
-            $query->where('department_id', $user->employee->department_id);
-        })->where('user_id', '!=', $user->id); // Make sure they don't see their own
+    {
+        $user = $request->user();
         
-    } elseif (in_array($user->role->name, ['HR', 'CEO', 'Admin'])) {
-        // Upper management sees everything
-    } else {
-        // Regular employees shouldn't be on the main index, but just in case:
-        $applications->where('user_id', $user->id);
-    }
+        $applications = UserApplication::query();
 
-    return inertia('Applications/Index', [
-        'applications' => $applications->with(['user', 'approver', 'escalatedRole'])->get()
-    ]);
-}
+        // GLOBAL RULE: Hide drafts unless they belong to the current user
+        $applications->where(function ($query) use ($user) {
+            $query->where('status', '!=', 'draft')
+                  ->orWhere('user_id', $user->id);
+        });
+
+        if ($user->role->name === 'Team_In_Charge') {
+            // Query through the user's employee profile to check the department
+            $applications->whereHas('user.employee', function ($query) use ($user) {
+                $query->where('department_id', $user->employee->department_id);
+            })->where('user_id', '!=', $user->id); // Make sure they don't see their own
+            
+        } elseif (in_array($user->role->name, ['HR', 'CEO', 'Admin'])) {
+            // Upper management sees everything (drafts are already filtered out by the global rule)
+        } else {
+            // Regular employees shouldn't be on the main index, but just in case:
+            $applications->where('user_id', $user->id);
+        }
+
+        return inertia('Applications/Index', [
+            'applications' => $applications->with(['user', 'approver', 'escalatedRole'])->get()
+        ]);
+    }
 
     public function myApplications(Request $request)
     {
@@ -86,6 +96,19 @@ public function index(Request $request)
             $validated['action_type'] === 'draft' ? 'application_draft_created' : 'application_submitted', 
             $application
         );
+
+        // Notify Team In-Charge if it's sent (not a draft)
+        if ($application->status === 'pending') {
+            $managers = User::whereHas('role', function ($query) {
+                $query->where('name', 'Team_In_Charge');
+            })->whereHas('employee', function ($query) use ($application) {
+                $query->where('department_id', $application->user->employee->department_id);
+            })->get();
+
+            if ($managers->isNotEmpty()) {
+                Notification::send($managers, new ApplicationSubmitted($application));
+            }
+        }
 
         return redirect()->route('applications.edit', $application->id);
     }
@@ -147,6 +170,19 @@ public function index(Request $request)
             $oldData
         );
 
+        // If it changed from draft to pending, notify the manager
+        if ($oldData['status'] === 'draft' && $determinedStatus === 'pending') {
+            $managers = User::whereHas('role', function ($query) {
+                $query->where('name', 'Team_In_Charge');
+            })->whereHas('employee', function ($query) use ($application) {
+                $query->where('department_id', $application->user->employee->department_id);
+            })->get();
+
+            if ($managers->isNotEmpty()) {
+                Notification::send($managers, new ApplicationSubmitted($application));
+            }
+        }
+
         return redirect()->back();
     }
 
@@ -200,6 +236,15 @@ public function index(Request $request)
         ]);
 
         $this->logActivity('application_escalated', $application, $oldData);
+
+        // Notify HR, CEO, and Admin
+        $upperManagement = User::whereHas('role', function ($query) {
+            $query->whereIn('name', ['HR', 'CEO', 'Admin']);
+        })->get();
+
+        if ($upperManagement->isNotEmpty()) {
+            Notification::send($upperManagement, new ApplicationEscalated($application, Auth::user()));
+        }
 
         return back()->with('success', "Application escalated to {$role->name} successfully.");
     }
