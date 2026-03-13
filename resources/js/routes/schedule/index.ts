@@ -1,7 +1,7 @@
 import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition } from './../../wayfinder'
 /**
 * @see \App\Http\Controllers\ScheduleController::mySchedule
-* @see app/Http/Controllers/ScheduleController.php:261
+* @see app/Http/Controllers/ScheduleController.php:295
 * @route '/my-schedule'
 */
 export const mySchedule = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -16,7 +16,7 @@ mySchedule.definition = {
 
 /**
 * @see \App\Http\Controllers\ScheduleController::mySchedule
-* @see app/Http/Controllers/ScheduleController.php:261
+* @see app/Http/Controllers/ScheduleController.php:295
 * @route '/my-schedule'
 */
 mySchedule.url = (options?: RouteQueryOptions) => {
@@ -25,7 +25,7 @@ mySchedule.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\ScheduleController::mySchedule
-* @see app/Http/Controllers/ScheduleController.php:261
+* @see app/Http/Controllers/ScheduleController.php:295
 * @route '/my-schedule'
 */
 mySchedule.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -35,7 +35,7 @@ mySchedule.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
 
 /**
 * @see \App\Http\Controllers\ScheduleController::mySchedule
-* @see app/Http/Controllers/ScheduleController.php:261
+* @see app/Http/Controllers/ScheduleController.php:295
 * @route '/my-schedule'
 */
 mySchedule.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -45,7 +45,7 @@ mySchedule.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 
 /**
 * @see \App\Http\Controllers\ScheduleController::mySchedule
-* @see app/Http/Controllers/ScheduleController.php:261
+* @see app/Http/Controllers/ScheduleController.php:295
 * @route '/my-schedule'
 */
 const myScheduleForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -55,7 +55,7 @@ const myScheduleForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'>
 
 /**
 * @see \App\Http\Controllers\ScheduleController::mySchedule
-* @see app/Http/Controllers/ScheduleController.php:261
+* @see app/Http/Controllers/ScheduleController.php:295
 * @route '/my-schedule'
 */
 myScheduleForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -65,7 +65,7 @@ myScheduleForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> =
 
 /**
 * @see \App\Http\Controllers\ScheduleController::mySchedule
-* @see app/Http/Controllers/ScheduleController.php:261
+* @see app/Http/Controllers/ScheduleController.php:295
 * @route '/my-schedule'
 */
 myScheduleForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({

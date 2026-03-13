@@ -135,59 +135,97 @@ class ScheduleController extends Controller
             ? $user->managedDepartments()->pluck('departments.id')->toArray() 
             : [];
 
+        // 1. Group incoming assignments by user to handle hashing cleanly
+        $userAssignments = [];
+        foreach ($assignments as $key => $data) {
+            if (!isset($data['type']) || $data['type'] === 'unassigned') continue;
+            [$userId, $date] = explode('-', $key, 2);
+            $userAssignments[$userId][$date] = $data;
+        }
+
         DB::beginTransaction();
         try {
             $affectedScheduleIds = [];
-            $scheduledUserIds = [];
+            $usersToNotify = []; // Only holds IDs of users who actually had a change
+            $dates = []; // For the email table headers
 
-            foreach ($assignments as $key => $data) {
-                if (!isset($data['type']) || $data['type'] === 'unassigned') continue;
-
-                [$userId, $date] = explode('-', $key, 2);
+            foreach ($userAssignments as $userId => $datesData) {
                 $targetUser = User::with('employee')->find($userId);
-                
                 if (!$targetUser || !$targetUser->employee) continue;
 
-                // Security check: If Team In Charge, they can only schedule themselves OR their managed team
+                // Security check
                 if (!$isUpperManagement && $user->role->name === 'Team_In_Charge') {
                     if ($targetUser->id !== $user->id && !in_array($targetUser->employee->department_id, $managedDeptIds)) {
-                        continue; // Skip unauthorized assignment attempt
+                        continue; 
                     }
                 }
 
                 $deptId = $targetUser->employee->department_id;
+                
+                // Track dates for the email table later
+                foreach(array_keys($datesData) as $d) {
+                    $dates[] = $d;
+                }
+
+                $firstDate = array_key_first($datesData);
+                $weekStart = Carbon::parse($firstDate)->startOfWeek()->format('Y-m-d');
+                $weekEnd = Carbon::parse($firstDate)->endOfWeek()->format('Y-m-d');
+
                 $schedule = Schedule::firstOrCreate([
                     'department_id' => $deptId,
-                    'start_date' => Carbon::parse($date)->startOfWeek()->format('Y-m-d'),
-                    'end_date' => Carbon::parse($date)->endOfWeek()->format('Y-m-d'),
+                    'start_date' => $weekStart,
+                    'end_date' => $weekEnd,
                 ], ['creator_id' => $user->id, 'status' => $status]);
 
                 $affectedScheduleIds[] = $schedule->id;
-                $scheduledUserIds[] = $targetUser->id;
 
                 if ($isPublishing && $schedule->status !== 'published') {
                     $schedule->update(['status' => 'published']);
                 }
 
-                Shift::where('user_id', $userId)->where('date', $date)->delete();
-
+                // Delete old records
+                Shift::where('user_id', $userId)->whereBetween('date', [$weekStart, $weekEnd])->delete();
                 Tour::whereHas('users', fn($q) => $q->where('users.id', $userId))
-                    ->where('start_date', '<=', $date)->where('end_date', '>=', $date)
+                    ->where('start_date', '<=', $weekEnd)->where('end_date', '>=', $weekStart)
                     ->get()->each(function($ut) use ($userId) {
                         $ut->users()->detach($userId);
                         if ($ut->users()->count() === 0 && $ut->start_date == $ut->end_date) $ut->delete();
                     });
 
-                if ($data['type'] === 'off') {
-                    Shift::create(['schedule_id' => $schedule->id, 'user_id' => $userId, 'date' => $date, 'start_time' => '00:00:00', 'end_time' => '00:00:00', 'is_day_off' => true]);
-                } elseif ($data['type'] === 'office') {
-                    foreach ($data['shifts'] as $sd) {
-                        Shift::create(['schedule_id' => $schedule->id, 'user_id' => $userId, 'date' => $date, 'start_time' => $sd['start'], 'end_time' => $sd['end'], 'is_day_off' => false]);
+                // Create new records
+                foreach ($datesData as $date => $data) {
+                    if ($data['type'] === 'off') {
+                        Shift::create(['schedule_id' => $schedule->id, 'user_id' => $userId, 'date' => $date, 'start_time' => '00:00:00', 'end_time' => '00:00:00', 'is_day_off' => true]);
+                    } elseif ($data['type'] === 'office') {
+                        foreach ($data['shifts'] as $sd) {
+                            Shift::create(['schedule_id' => $schedule->id, 'user_id' => $userId, 'date' => $date, 'start_time' => $sd['start'], 'end_time' => $sd['end'], 'is_day_off' => false]);
+                        }
+                    } elseif ($data['type'] === 'field') {
+                        foreach ($data['tasks'] as $td) {
+                            $tour = Tour::create(['name' => $td['task'] ?: 'Field Assignment', 'location' => $td['location'] ?: 'External Location', 'start_date' => $date, 'end_date' => $date, 'status' => $status === 'published' ? 'approved' : 'pending']);
+                            $tour->users()->attach($userId);
+                        }
                     }
-                } elseif ($data['type'] === 'field') {
-                    foreach ($data['tasks'] as $td) {
-                        $tour = Tour::create(['name' => $td['task'] ?: 'Field Assignment', 'location' => $td['location'] ?: 'External Location', 'start_date' => $date, 'end_date' => $date, 'status' => $status === 'published' ? 'approved' : 'pending']);
-                        $tour->users()->attach($userId);
+                }
+
+                // --- THE HASHING & DEDUPLICATION LOGIC ---
+                if ($isPublishing) {
+                    ksort($datesData); // Sort to ensure the JSON string is always in the same order
+                    $hash = hash('sha256', json_encode($datesData));
+
+                    $existingTracker = DB::table('schedule_hashes')
+                        ->where('user_id', $userId)
+                        ->where('week_start', $weekStart)
+                        ->first();
+
+                    // If no hash exists, or the hash is different, flag for notification!
+                    if (!$existingTracker || $existingTracker->hash !== $hash) {
+                        $usersToNotify[] = $userId;
+                        
+                        DB::table('schedule_hashes')->updateOrInsert(
+                            ['user_id' => $userId, 'week_start' => $weekStart],
+                            ['hash' => $hash, 'updated_at' => now()]
+                        );
                     }
                 }
             }
@@ -198,56 +236,52 @@ class ScheduleController extends Controller
 
             DB::commit();
 
-            // SEND EMAIL LOGIC
-            // SEND EMAIL LOGIC
-            if ($isPublishing) {
-                // 1. Fetch the actual users who were scheduled
-                $uniqueUserIds = array_unique($scheduledUserIds);
-                $scheduledUsers = User::with('employee')->whereIn('id', $uniqueUserIds)->get();
+            // SEND EMAIL LOGIC (Targeted and delayed)
+            if ($isPublishing && !empty($usersToNotify)) {
+                
+                $scheduledUsers = User::with('employee')->whereIn('id', $usersToNotify)->get();
+                $uniqueDates = collect($dates)->unique()->sort()->values()->toArray();
+                $humanStartDate = Carbon::parse($uniqueDates[0] ?? now())->format('F j, Y');
 
-                // 2. Extract unique dates for the table headers
-                $dates = collect(array_keys($assignments))->map(function ($key) {
-                    return explode('-', $key, 2)[1];
-                })->unique()->sort()->values()->toArray();
-
-                // 3. Format rows for the email table
+                // Generate rows ONLY for users who actually had a change
                 $rows = [];
-                foreach ($assignments as $key => $data) {
-                    [$userId, $date] = explode('-', $key, 2);
-                    $targetUser = $scheduledUsers->firstWhere('id', $userId);
-                    
-                    if (!$targetUser) continue;
+                foreach ($usersToNotify as $uid) {
+                    $targetUser = $scheduledUsers->firstWhere('id', $uid);
                     $empName = $targetUser->employee->first_name . ' ' . $targetUser->employee->last_name;
 
-                    // Format the cell text based on shift type
-                    $cellText = 'Off';
-                    if ($data['type'] === 'office') {
-                        $cellText = collect($data['shifts'])
-                            ->map(fn($s) => $s['start'] . '-' . $s['end'])
-                            ->join(', ');
-                    } elseif ($data['type'] === 'field') {
-                        $cellText = collect($data['tasks'])
-                            ->map(fn($t) => '📍 ' . ($t['location'] ?: 'Field'))
-                            ->join('<br>');
-                    }
+                    foreach ($uniqueDates as $date) {
+                        $data = $userAssignments[$uid][$date] ?? null;
+                        
+                        if (!$data || $data['type'] === 'unassigned') {
+                            $rows[$empName][$date] = '-';
+                            continue;
+                        }
 
-                    $rows[$empName][$date] = $cellText;
+                        if ($data['type'] === 'off') {
+                            $rows[$empName][$date] = 'Off';
+                        } elseif ($data['type'] === 'office') {
+                            $rows[$empName][$date] = collect($data['shifts'])
+                                ->map(fn($s) => $s['start'] . '-' . $s['end'])
+                                ->join(', ');
+                        } elseif ($data['type'] === 'field') {
+                            $rows[$empName][$date] = collect($data['tasks'])
+                                ->map(fn($t) => '📍 ' . ($t['location'] ?: 'Field'))
+                                ->join('<br>');
+                        }
+                    }
                 }
 
                 $scheduleData = [
-                    'dates' => $dates,
+                    'dates' => $uniqueDates,
                     'rows' => $rows,
                 ];
 
-                $humanStartDate = Carbon::parse($dates[0] ?? now())->format('F j, Y');
-
-                // 4. Send the notification to all scheduled users via Queue
-                if ($scheduledUsers->isNotEmpty()) {
-                    \Illuminate\Support\Facades\Notification::send(
-                        $scheduledUsers, 
-                        new \App\Notifications\SchedulePublished($scheduleData, $user->name, $humanStartDate)
-                    );
-                }
+                // Send the notification to the filtered users
+                \Illuminate\Support\Facades\Notification::send(
+                    $scheduledUsers, 
+                    (new \App\Notifications\SchedulePublished($scheduleData, $user->name, $humanStartDate))
+                        ->delay(now()->addMinutes(3)) // 3-minute grace period
+                );
             }
 
         } catch (\Exception $e) {
@@ -255,8 +289,8 @@ class ScheduleController extends Controller
             return back()->withErrors(['error' => 'Database Error: ' . $e->getMessage()]);
         }
 
-        return redirect()->back();
-    } 
+        return redirect()->back()->with('success', 'Schedule saved successfully.');
+    }
 
     public function mySchedule(Request $request)
     {
