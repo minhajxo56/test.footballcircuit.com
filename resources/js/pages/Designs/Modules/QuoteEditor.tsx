@@ -41,7 +41,9 @@ export default function QuoteEditor() {
     const [textInput, setTextInput] = useState('');
     const [fontSize, setFontSize] = useState(120);
     const [textColor, setTextColor] = useState('#ef4444');
+    const [textWidth, setTextWidth] = useState(CANVAS_WIDTH * 0.9); // Re-added textWidth state
     const [statusMsg, setStatusMsg] = useState<string | null>(null);
+    const [isLocked, setIsLocked] = useState(false);
 
     useEffect(() => {
         const handleBeforeUnload = (e: BeforeUnloadEvent) => { e.preventDefault(); e.returnValue = ''; };
@@ -79,6 +81,7 @@ export default function QuoteEditor() {
         setTextInput(obj.text || '');
         setFontSize(obj.fontSize || 120);
         setTextColor(obj.fill as string || '#000000');
+        setTextWidth(obj.width || CANVAS_WIDTH * 0.9); // Re-added width initialization
     };
 
     const closeTextEditor = () => setActiveTextObj(null);
@@ -88,15 +91,34 @@ export default function QuoteEditor() {
         setDisplayScale(containerRef.current.clientWidth / CANVAS_WIDTH);
         if (!canvasRef.current) {
             canvasRef.current = new Canvas(canvasElRef.current, { width: CANVAS_WIDTH, height: CANVAS_HEIGHT, preserveObjectStacking: true });
-            canvasRef.current.on('selection:created', (e) => { if (e.selected?.[0] instanceof Textbox) setupTextEditor(e.selected[0] as Textbox); });
-            canvasRef.current.on('selection:updated', (e) => { if (e.selected?.[0] instanceof Textbox) setupTextEditor(e.selected[0] as Textbox); else closeTextEditor(); });
-            canvasRef.current.on('selection:cleared', closeTextEditor);
+            
+            canvasRef.current.on('selection:created', (e) => {
+                const obj = e.selected?.[0];
+                if (obj) {
+                    if (obj instanceof Textbox) setupTextEditor(obj as Textbox);
+                    setIsLocked(!!obj.lockMovementX);
+                }
+            });
+            
+            canvasRef.current.on('selection:updated', (e) => {
+                const obj = e.selected?.[0];
+                if (obj) {
+                    if (obj instanceof Textbox) setupTextEditor(obj as Textbox);
+                    else closeTextEditor();
+                    setIsLocked(!!obj.lockMovementX);
+                }
+            });
+            
+            canvasRef.current.on('selection:cleared', () => {
+                closeTextEditor();
+                setIsLocked(false);
+            });
 
             const upperEl = canvasRef.current.upperCanvasEl;
             upperEl.addEventListener('touchstart', (e: TouchEvent) => {
                 if (e.touches.length === 2) {
                     const activeObj = canvasRef.current?.getActiveObject();
-                    if (activeObj) pinchState.current = { distance: Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY), scaleX: activeObj.scaleX || 1, scaleY: activeObj.scaleY || 1 };
+                    if (activeObj && !activeObj.lockScalingX) pinchState.current = { distance: Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY), scaleX: activeObj.scaleX || 1, scaleY: activeObj.scaleY || 1 };
                 }
             }, { passive: false });
 
@@ -104,7 +126,7 @@ export default function QuoteEditor() {
                 if (e.touches.length === 2 && pinchState.current) {
                     e.preventDefault();
                     const activeObj = canvasRef.current?.getActiveObject();
-                    if (activeObj) {
+                    if (activeObj && !activeObj.lockScalingX) {
                         const scale = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY) / pinchState.current.distance;
                         activeObj.set({ scaleX: pinchState.current.scaleX * scale, scaleY: pinchState.current.scaleY * scale });
                         canvasRef.current?.requestRenderAll();
@@ -250,7 +272,7 @@ export default function QuoteEditor() {
         const img = await FabricImage.fromURL(croppedData);
         const radius = img.width / 2;
         img.set({ clipPath: new Circle({ radius, originX: 'center', originY: 'center' }), originX: 'center', originY: 'center' });
-        const border = new Circle({ radius, fill: 'transparent', stroke: '#fff', strokeWidth: 12, originX: 'center', originY: 'center' });
+        const border = new Circle({ radius, fill: 'transparent', stroke: '#fff', strokeWidth: 30, originX: 'center', originY: 'center' });
         const group = new Group([img, border], { left: CANVAS_WIDTH / 2, top: CANVAS_HEIGHT / 2, originX: 'center', originY: 'center', cornerColor: '#2563eb', cornerSize: 60, transparentCorners: false });
         group.scaleToWidth(CANVAS_WIDTH * 0.4);
         canvasRef.current.add(group);
@@ -262,7 +284,8 @@ export default function QuoteEditor() {
 
     const addTextObject = (defaultText: string, fill: string, topOffset: number, size: number) => {
         if (!canvasRef.current) return;
-        const text = new Textbox(defaultText, { left: CANVAS_WIDTH / 2, top: (CANVAS_HEIGHT / 2) + topOffset, width: CANVAS_WIDTH * 0.8, fill, fontSize: size, originX: 'center', originY: 'center', textAlign: 'center', fontWeight: 'bold', cornerColor: '#2563eb', cornerSize: 60, transparentCorners: false, splitByGrapheme: true, editable: false });
+        const defaultWidth = CANVAS_WIDTH * 0.9;
+        const text = new Textbox(defaultText, { left: CANVAS_WIDTH / 2, top: (CANVAS_HEIGHT / 2) + topOffset, width: defaultWidth, fill, fontSize: size, originX: 'center', originY: 'center', textAlign: 'center', fontWeight: 'bold', cornerColor: '#2563eb', cornerSize: 60, transparentCorners: false, splitByGrapheme: false, editable: false });
         text.setControlsVisibility({ mt: false, mb: false, ml: false, mr: false });
         canvasRef.current.add(text);
         canvasRef.current.setActiveObject(text);
@@ -271,6 +294,18 @@ export default function QuoteEditor() {
     const updateText = (val: string) => { setTextInput(val); if (activeTextObj && canvasRef.current) { activeTextObj.set({ text: val }); canvasRef.current.requestRenderAll(); } };
     const updateFontSize = (e: React.ChangeEvent<HTMLInputElement>) => { const val = parseInt(e.target.value); setFontSize(val); if (activeTextObj && canvasRef.current) { activeTextObj.set({ fontSize: val }); canvasRef.current.requestRenderAll(); } };
     const updateColor = (color: string) => { setTextColor(color); if (activeTextObj && canvasRef.current) { activeTextObj.set({ fill: color }); canvasRef.current.requestRenderAll(); } };
+    
+    // Re-added Text Width handler
+    const updateTextWidth = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const val = parseInt(e.target.value);
+        const safeWidth = Math.min(val, CANVAS_WIDTH);
+        setTextWidth(safeWidth);
+        if (activeTextObj && canvasRef.current) {
+            activeTextObj.set({ width: safeWidth });
+            canvasRef.current.requestRenderAll();
+        }
+    };
+
     const centerText = () => { if (activeTextObj && canvasRef.current) { activeTextObj.set({ left: CANVAS_WIDTH / 2, originX: 'center' }); canvasRef.current.renderAll(); } };
     const downloadImage = () => { if (!canvasRef.current) return; canvasRef.current.discardActiveObject(); canvasRef.current.renderAll(); const link = document.createElement('a'); link.download = 'quote-design.png'; link.href = canvasRef.current.toDataURL({ format: 'png', multiplier: 1 }); link.click(); };
     const copyImage = async () => { if (!canvasRef.current) return; canvasRef.current.discardActiveObject(); canvasRef.current.renderAll(); try { const blob = await (await fetch(canvasRef.current.toDataURL({ format: 'png', multiplier: 1 }))).blob(); await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]); alert('Copied to clipboard!'); } catch (e) { alert('Copy failed.'); } };
@@ -281,7 +316,7 @@ export default function QuoteEditor() {
         canvasRef.current.discardActiveObject();
         canvasRef.current.renderAll();
         closeTextEditor();
-        const canvasState = canvasRef.current.toObject(['name', 'selectable', 'evented']);
+        const canvasState = canvasRef.current.toObject(['name', 'selectable', 'evented', 'lockMovementX', 'lockMovementY', 'lockRotation', 'lockScalingX', 'lockScalingY', 'hasControls']);
         const payload = { template: activeTemplate, canvas: canvasState, timestamp: new Date().toISOString() };
         localStorage.setItem('quote_editor_quick_save', JSON.stringify(payload));
         showStatus('Quote and Speaker name is saved if any');
@@ -302,7 +337,6 @@ export default function QuoteEditor() {
         if (!canvasRef.current) return;
         const activeObjects = canvasRef.current.getActiveObjects();
         if (activeObjects.length) {
-            // FIXED: Casting obj to any to access the custom name property
             activeObjects.forEach(obj => { if ((obj as any).name !== 'template') canvasRef.current?.remove(obj); });
             canvasRef.current.discardActiveObject();
             canvasRef.current.requestRenderAll();
@@ -310,6 +344,27 @@ export default function QuoteEditor() {
             showStatus('Object deleted');
         }
     }, [showStatus]);
+
+    const handleLockToggle = useCallback(() => {
+        if (!canvasRef.current) return;
+        const activeObj = canvasRef.current.getActiveObject();
+        if (!activeObj) {
+            showStatus('Select an object to lock/unlock');
+            return;
+        }
+        const newLockedState = !isLocked;
+        activeObj.set({
+            lockMovementX: newLockedState,
+            lockMovementY: newLockedState,
+            lockRotation: newLockedState,
+            lockScalingX: newLockedState,
+            lockScalingY: newLockedState,
+            hasControls: !newLockedState
+        });
+        canvasRef.current.requestRenderAll();
+        setIsLocked(newLockedState);
+        showStatus(newLockedState ? 'Object locked' : 'Object unlocked');
+    }, [isLocked, showStatus]);
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
@@ -327,16 +382,28 @@ export default function QuoteEditor() {
                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                         </button>
                     </div>
-                    <button onClick={handleQuickSave} title="Save" className="w-10 h-10 flex items-center justify-center rounded-full bg-blue-600 hover:bg-blue-700 active:scale-95 text-white shadow transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900">
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
-                    </button>
+                    <div className="flex items-center gap-3">
+                        <button onClick={handleLockToggle} title={isLocked ? "Unlock" : "Lock"} className={`w-10 h-10 flex items-center justify-center rounded-full active:scale-95 shadow transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 dark:focus:ring-offset-gray-900 ${isLocked ? 'bg-amber-500 hover:bg-amber-600 focus:ring-amber-400 text-white' : 'bg-gray-600 hover:bg-gray-700 focus:ring-gray-500 text-white'}`}>
+                            {isLocked ? (
+                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
+                            ) : (
+                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z" /></svg>
+                            )}
+                        </button>
+                        <button onClick={handleQuickSave} title="Save" className="w-10 h-10 flex items-center justify-center rounded-full bg-blue-600 hover:bg-blue-700 active:scale-95 text-white shadow transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900">
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                        </button>
+                    </div>
                 </div>
                 {isLoading && <div className="fixed inset-0 z-50 flex items-center justify-center dark:bg-gray-950/90 dark:text-white font-bold">Initializing...</div>}
                 {isSharing && <div className="fixed inset-0 z-50 flex items-center justify-center dark:bg-gray-950/90 dark:text-white font-bold">Preparing...</div>}
                 <EditorToolbar onTheme={() => setShowTemplates(true)} onBg={() => fileInputRef.current?.click()} onImg={() => portraitInputRef.current?.click()} onQuote={() => addTextObject('Enter Quote', '#e11d48', -200, 120)} onName={() => addTextObject('— Name', '#ffffff', 300, 80)} onCopy={copyImage} onSave={downloadImage} onPost={shareImage} bgRef={fileInputRef} imgRef={portraitInputRef} onBgUpload={handleBgUpload} onImgUpload={handlePortraitUpload} />
                 <CanvasWorkspace containerRef={containerRef} canvasElRef={canvasElRef} displayScale={displayScale} canvasWidth={CANVAS_WIDTH} canvasHeight={CANVAS_HEIGHT} />
                 {showTemplates && <TemplateSelectorModal templates={TEMPLATES} activeTemplate={activeTemplate} onSelect={handleTemplateChange} onClose={() => setShowTemplates(false)} />}
-                {activeTextObj && <TextPropertiesPanel textColor={textColor} fontSize={fontSize} textInput={textInput} onColor={updateColor} onSize={updateFontSize} onText={updateText} onCenter={centerText} onClose={closeTextEditor} />}
+                
+                {/* CORRECTED: Props added back in for textWidth, maxCanvasWidth, and onWidth */}
+                {activeTextObj && <TextPropertiesPanel textColor={textColor} fontSize={fontSize} textInput={textInput} textWidth={textWidth} maxCanvasWidth={CANVAS_WIDTH} onColor={updateColor} onSize={updateFontSize} onText={updateText} onWidth={updateTextWidth} onCenter={centerText} onClose={closeTextEditor} />}
+                
                 {showCropper && <PortraitCropperModal canvasRef={cropCanvasElRef} zoom={cropZoom} onZoom={handleZoom} onApply={applyCrop} onCancel={() => setShowCropper(false)} />}
             </div>
         </AppLayout>
